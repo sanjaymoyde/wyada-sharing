@@ -1,4 +1,4 @@
-name: Deploy to cPanel (Fast Method)
+name: Deploy via FTP (Simple & Fast)
 
 on:
   push:
@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout code
+    - name: Checkout
       uses: actions/checkout@v3
     
     - name: Setup Node.js
@@ -17,36 +17,16 @@ jobs:
       with:
         node-version: '18'
     
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Build project
-      run: npm run build
-    
-    - name: Create deployment archive
+    - name: Install and Build
       run: |
-        cd dist
-        tar -czf ../deployment.tar.gz .
-        cd ..
+        npm ci
+        npm run build
     
-    - name: Deploy via SFTP
-      uses: Dylan700/sftp-upload-action@latest
+    - name: FTP Deploy
+      uses: SamKirkland/FTP-Deploy-Action@4.3.0
       with:
         server: ${{ secrets.SSH_HOST }}
         username: ${{ secrets.SSH_USERNAME }}
         password: ${{ secrets.SSH_PASSPHRASE }}
-        port: 22
-        uploads: |
-          deployment.tar.gz => /home/quirkamo/deployment.tar.gz
-    
-    - name: Extract files on server
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USERNAME }}
-        password: ${{ secrets.SSH_PASSPHRASE }}
-        port: 22
-        script: |
-          cd /home/quirkamo/public_html/waydacode/pub
-          tar -xzf /home/quirkamo/deployment.tar.gz
-          rm -f /home/quirkamo/deployment.tar.gz
+        local-dir: ./dist/
+        server-dir: /public_html/waydacode/pub/
