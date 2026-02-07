@@ -1,4 +1,4 @@
-name: Deploy Frontend to cPanel
+name: Deploy to cPanel via SSH
 
 on:
   push:
@@ -23,13 +23,14 @@ jobs:
     - name: Build project
       run: npm run build
     
-    - name: Deploy to cPanel via FTP
-      uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+    - name: Deploy to Server via SCP
+      uses: appleboy/scp-action@master
       with:
-        server: ${{ secrets.FTP_SERVER }}
-        username: ${{ secrets.FTP_USERNAME }}
-        password: ${{ secrets.FTP_PASSWORD }}
-        protocol: ftps
-        port: 21
-        local-dir: ./dist/
-        server-dir: /public_html/waydacode/pub/
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 22
+        source: "dist/*"
+        target: ${{ secrets.REMOTE_PATH }}
+        strip_components: 1
+        rm: true
