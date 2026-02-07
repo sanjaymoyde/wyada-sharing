@@ -37,7 +37,7 @@ jobs:
         password: ${{ secrets.SSH_PASSPHRASE }}
         port: 22
         uploads: |
-          deployment.tar.gz => /home/quirka38/deployment.tar.gz
+          deployment.tar.gz => /home/quirkamo/deployment.tar.gz
     
     - name: Extract files on server
       uses: appleboy/ssh-action@master
@@ -47,6 +47,6 @@ jobs:
         password: ${{ secrets.SSH_PASSPHRASE }}
         port: 22
         script: |
-          cd /home/quirka38/public_html/waydacode/pub
-          tar -xzf /home/quirka38/deployment.tar.gz
-          rm -f /home/quirka38/deployment.tar.gz
+          cd /home/quirkamo/public_html/waydacode/pub
+          tar -xzf /home/quirkamo/deployment.tar.gz
+          rm -f /home/quirkamo/deployment.tar.gz
