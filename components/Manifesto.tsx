@@ -513,7 +513,7 @@ export const Manifesto: React.FC<ManifestoProps> = ({ isNight }) => {
                                 variants={heroContainerVariants}
                                 className={`text-3xl sm:text-4xl md:text-7xl font-bold leading-tight flex flex-wrap gap-[0.2em] ${isNight ? 'text-brand-lime' : 'text-white'}`}
                             >
-                                {["Cities", "are", "evolving."].map((word, i) => (
+                                {["Cities", "are", "evolvingings."].map((word, i) => (
                                     <motion.span
                                         key={i}
                                         variants={wordVariants}
