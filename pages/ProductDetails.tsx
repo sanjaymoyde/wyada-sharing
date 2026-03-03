@@ -20,8 +20,8 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({
     const navigate = useNavigate();
 
     const productType = useMemo(() => {
-        if (handle === 'mesa') return 'mesa';
-        if (handle === 'crest') return 'crest';
+        if (handle === 'mesa' || handle === 'mesa-re-balance-cleansing-clay') return 'mesa';
+        if (handle === 'crest' || handle === 'crest-all-defence-skin-sorbet') return 'crest';
         return null;
     }, [handle]);
 

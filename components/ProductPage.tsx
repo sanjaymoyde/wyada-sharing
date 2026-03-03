@@ -1,9 +1,10 @@
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { ShoppingBag, Clock, RefreshCw, ChevronRight, ChevronLeft } from 'lucide-react';
 import { ELEMENT_ICONS, LOGO_URL } from '../constants';
+import { buildApiUrl } from '../utils/api';
 
 import { Product } from '../types';
 
@@ -18,8 +19,47 @@ interface ProductPageProps {
 export const ProductPage: React.FC<ProductPageProps> = ({ productType, onClose, onAddToCart, isNight, productData }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [metafields, setMetafields] = useState<Record<string, string> | null>(null);
 
     const isMesa = productType === 'mesa';
+
+    // Fetch Metafields
+    useEffect(() => {
+        if (!productData?.id) return;
+        const controller = new AbortController();
+        let mounted = true;
+
+        const fetchMetafields = async () => {
+            try {
+                const response = await fetch(buildApiUrl(`/api/products/metafield/${productData.id}`), {
+                    signal: controller.signal,
+                });
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch metafields: ${response.status}`);
+                }
+                const data = await response.json();
+
+                if (mounted && data.metafields && Array.isArray(data.metafields)) {
+                    const fields: Record<string, string> = {};
+                    data.metafields.forEach((field: any) => {
+                        fields[field.key] = field.value;
+                    });
+                    setMetafields(fields);
+                }
+            } catch (error) {
+                const isAbort = error instanceof DOMException && error.name === 'AbortError';
+                if (!isAbort) {
+                    console.error("Failed to fetch metafields:", error);
+                }
+            }
+        };
+
+        fetchMetafields();
+        return () => {
+            mounted = false;
+            controller.abort();
+        };
+    }, [productData?.id]);
 
     // Brand Data
     const color = isMesa ? '#E89C6C' : '#5D9BCE'; // Mesa / Crest
@@ -32,13 +72,15 @@ export const ProductPage: React.FC<ProductPageProps> = ({ productType, onClose, 
     // Shopify usually supports format conversion via URL parameters, but replacing extension is a safe basic check
     const productImages = productData?.images?.length
         ? productData.images.map(img => {
-            if (img.src.toLowerCase().includes('.heic')) {
-                // Shopify CDN often supports format=jpg query param or replacing extension
-                // Simple attempt: replace extension. If that fails, we might need to rely on Shopify's 'format' param.
-                // Better approach with Shopify CDN: append `&format=jpg` if query string exists, or `?format=jpg`
-                const urlObj = new URL(img.src);
-                urlObj.searchParams.set('format', 'jpg');
-                return urlObj.toString();
+            try {
+                if (img.src.toLowerCase().includes('.heic')) {
+                    // Shopify CDN often supports format conversion via query params.
+                    const urlObj = new URL(img.src);
+                    urlObj.searchParams.set('format', 'jpg');
+                    return urlObj.toString();
+                }
+            } catch {
+                // Keep original URL when parsing fails.
             }
             return img.src;
         })
@@ -51,9 +93,65 @@ export const ProductPage: React.FC<ProductPageProps> = ({ productType, onClose, 
     const nextImage = () => setCurrentImageIndex((prev) => (prev + 1) % productImages.length);
     const prevImage = () => setCurrentImageIndex((prev) => (prev - 1 + productImages.length) % productImages.length);
 
-    const dynamicPrice = productData?.variants?.[0]?.price ? `₹${Number(productData.variants[0].price)}` : (isMesa ? '₹799' : '₹1299');
+    const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+        const threshold = 50;
+        if (info.offset.x < -threshold) {
+            nextImage();
+        } else if (info.offset.x > threshold) {
+            prevImage();
+        }
+    };
+
+    const lastWheelTime = useRef(0);
+    const handleWheel = (e: React.WheelEvent) => {
+        const now = Date.now();
+        if (now - lastWheelTime.current < 500) return; // Debounce
+
+        // Allow vertical scrolling to pass through if dominant
+        if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) return;
+
+        if (Math.abs(e.deltaX) > 30) {
+            if (e.deltaX > 0) {
+                nextImage();
+            } else {
+                prevImage();
+            }
+            lastWheelTime.current = now;
+        }
+    };
+
+    const dynamicPrice = productData?.variants?.[0]?.price ? `\u20B9${Number(productData.variants[0].price)}` : (isMesa ? '\u20B9799' : '\u20B91299');
     // Keep HTML content for rich rendering
     const dynamicDescription = productData?.body_html || "";
+
+    // Parse Ritual Data from Metafields (Key: metafield5, metafield6)
+    // Format: "Time\nDesc"
+    const parseRitual = (metaValue: string) => {
+        if (!metaValue) return null;
+        const parts = metaValue.split('\n');
+        return {
+            time: parts[0] || '',
+            desc: parts.slice(1).join(' ') || ''
+        };
+    };
+
+    const ritual1 = metafields ? parseRitual(metafields['metafield5']) : null;
+    const ritual2 = metafields ? parseRitual(metafields['metafield6']) : null;
+
+    // Check if we have dynamic ingredients
+    const hasDynamicIngredients = metafields && (metafields['heading1'] || metafields['heading2']);
+
+    const dynamicIngredients = hasDynamicIngredients ? [
+        { name: metafields!['heading1'] || '', role: metafields!['metafield1'] || '' },
+        { name: metafields!['heading2'] || '', role: metafields!['metafield2'] || metafields!['metafiled2'] || '' }, // Corrected key with fallback
+        { name: metafields!['heading3'] || '', role: metafields!['metafield3'] || '' },
+        { name: metafields!['heading4'] || '', role: metafields!['metafield4'] || '' },
+    ].filter(i => i.name) : [];
+
+    const dynamicRitual = (ritual1 && ritual2 && metafields) ? [
+        { title: metafields['heading5'] || 'Step 1', time: ritual1.time, desc: ritual1.desc },
+        { title: metafields['heading6'] || 'Step 2', time: ritual2.time, desc: ritual2.desc }
+    ] : [];
 
     const product = isMesa ? {
         name: productData?.title || 'mesa',
@@ -62,13 +160,13 @@ export const ProductPage: React.FC<ProductPageProps> = ({ productType, onClose, 
         price: dynamicPrice,
         description: dynamicDescription || "A volcanic clay cleanser that pulls the city out of your pores. It doesn't just clean; it resets your electromagnetic charge, calming inflammation instantly.",
         story: "We evolved in mud. But modern life is sterile concrete. Mesa brings the earth back to your routine using Kaolin Clay and Zinc Oxide to detoxify without stripping.",
-        ingredients: [
+        ingredients: hasDynamicIngredients ? dynamicIngredients : [
             { name: 'Kaolin Clay', role: 'Magnetic absorption' },
             { name: 'Zinc Oxide', role: 'Calms inflammation' },
             { name: 'Magnesium', role: 'Cell repair' },
             { name: 'Ayurvedic Base', role: 'Balancing' }
         ],
-        ritual: [
+        ritual: dynamicRitual.length > 0 ? dynamicRitual : [
             { title: 'Wash', time: '2 Mins', desc: 'Daily detox. Massage into damp skin.' },
             { title: 'Mask', time: '10 Mins', desc: 'Deep reset. Leave on until dry.' }
         ]
@@ -79,13 +177,13 @@ export const ProductPage: React.FC<ProductPageProps> = ({ productType, onClose, 
         price: dynamicPrice,
         description: dynamicDescription || "A biomimetic gel moisturizer that mimics your biology to hydrate without weight. Green tea antioxidants provide an invisible shield against urban pollution.",
         story: "Your skin is 64% water. The city dries it out. Crest puts it back. It forms a breathable, invisible layer that keeps the bad out and the good in.",
-        ingredients: [
+        ingredients: hasDynamicIngredients ? dynamicIngredients : [
             { name: 'Hyaluronic Acid', role: 'Deep hydration' },
             { name: 'Green Tea', role: 'Antioxidant shield' },
             { name: 'Aloe Vera', role: 'Instant cooling' },
             { name: 'Ceramides', role: 'Barrier builder' }
         ],
-        ritual: [
+        ritual: dynamicRitual.length > 0 ? dynamicRitual : [
             { title: 'Hydrate', time: 'Daily', desc: 'Apply morning & night after cleansing.' },
             { title: 'Protect', time: 'Layer', desc: 'Wear under SPF for city armor.' }
         ]
@@ -105,7 +203,7 @@ export const ProductPage: React.FC<ProductPageProps> = ({ productType, onClose, 
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
-            className={`min-h-screen w-full relative flex flex-col ${isNight ? 'text-brand-lime' : 'text-black'}`}
+            className={`h-[var(--app-vh)] w-full relative flex flex-col overflow-hidden ${isNight ? 'text-brand-lime' : 'text-black'}`}
             style={{ backgroundColor: isNight ? '#0a0a0a' : '#ffffff' }}
         >
             {/* HEADER - Logo Home Button */}
@@ -124,10 +222,13 @@ export const ProductPage: React.FC<ProductPageProps> = ({ productType, onClose, 
             </div>
 
             {/* MAIN SCROLL CONTAINER */}
-            <div className="flex-1 w-full relative" ref={containerRef}>
+            <div className="flex-1 w-full relative overflow-y-auto scroll-smooth" ref={containerRef}>
 
                 {/* HERO SECTION (Sticky) */}
-                <div className={`sticky top-0 h-screen w-full ${bgColor} flex flex-col text-white overflow-hidden z-10`}>
+                <div
+                    className={`sticky top-0 w-full ${bgColor} flex flex-col text-white overflow-hidden z-10`}
+                    style={{ height: 'var(--app-vh)' }}
+                >
 
                     {/* Top Right: Element Icon */}
                     <Link
@@ -142,12 +243,15 @@ export const ProductPage: React.FC<ProductPageProps> = ({ productType, onClose, 
                                 referrerPolicy="no-referrer"
                             />
                         </div>
-                        <span className="text-[10px] uppercase tracking-widest font-bold opacity-80">Element of {elementName}</span>
+                        <span className="text-[10px] uppercase tracking-widest font-bold">Element of {elementName}</span>
                     </Link>
 
                     {/* Center: Product Carousel */}
                     <div className="absolute inset-0 flex flex-col items-center justify-start md:justify-center z-10 pt-[12vh] md:pt-8 pb-32 px-8 pointer-events-none">
-                        <div className="relative w-full max-w-[340px] md:w-[30vw] md:max-w-[400px] aspect-[3/4] pointer-events-auto">
+                        <div
+                            className="relative w-full max-w-[340px] md:w-[30vw] md:max-w-[400px] aspect-[3/4] pointer-events-auto touch-pan-y"
+                            onWheel={handleWheel}
+                        >
                             <AnimatePresence mode="wait">
                                 <motion.img
                                     key={currentImageIndex}
@@ -156,7 +260,11 @@ export const ProductPage: React.FC<ProductPageProps> = ({ productType, onClose, 
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -20 }}
                                     transition={{ duration: 0.3 }}
-                                    className="w-full h-full object-cover rounded-3xl"
+                                    drag="x"
+                                    dragConstraints={{ left: 0, right: 0 }}
+                                    dragElastic={0.2}
+                                    onDragEnd={handleDragEnd}
+                                    className="w-full h-full object-cover rounded-[6vw] md:rounded-3xl cursor-grab active:cursor-grabbing"
                                 />
                             </AnimatePresence>
 
@@ -186,7 +294,7 @@ export const ProductPage: React.FC<ProductPageProps> = ({ productType, onClose, 
 
                 {/* DETAILS CARD (Scrolls Over) */}
                 {/* No margin needed; it naturally follows the sticky hero in DOM flow, starting at 100vh */}
-                <div className={`relative z-20 w-full rounded-t-[3rem] -mt-12 pt-12 pb-32 shadow-[0_-20px_40px_rgba(0,0,0,0.1)] ${detailsBg}`}>
+                <div className={`relative z-20 w-full rounded-t-[10vw] md:rounded-t-[3rem] -mt-12 pt-12 pb-32 shadow-[0_-20px_40px_rgba(0,0,0,0.1)] ${detailsBg}`}>
 
                     {/* Drag Handle Visual */}
                     <div className="w-full flex justify-center mb-8">
@@ -223,7 +331,7 @@ export const ProductPage: React.FC<ProductPageProps> = ({ productType, onClose, 
                                         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }}></div>
                                         <div>
                                             <h4 className="font-bold text-lg leading-none mb-2">{ing.name}</h4>
-                                            <p className="text-xs opacity-60 uppercase tracking-wider">{ing.role}</p>
+                                            <p className="text-xs opacity-60 tracking-wider">{ing.role}</p>
                                         </div>
                                     </div>
                                 ))}
@@ -257,7 +365,7 @@ export const ProductPage: React.FC<ProductPageProps> = ({ productType, onClose, 
             </div>
 
             {/* FLOATING FOOTER (Liquid Glass) */}
-            <div className="fixed bottom-6 left-0 right-0 flex justify-center z-40 pointer-events-none">
+            <div className="absolute bottom-6 left-0 right-0 flex justify-center z-40 pointer-events-none">
                 <motion.div
                     initial={{ y: 100, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}

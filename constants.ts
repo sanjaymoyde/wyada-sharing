@@ -3,7 +3,7 @@ import { Ingredient, BlogPost } from './types';
 
 // REPLACEMENT INSTRUCTION:
 // Using Google Content CDN (lh3) which often bypasses Drive viewer restrictions
-export const LOGO_URL = "https://lh3.googleusercontent.com/d/1dz2UDcrD_rdeqGTQH2DZqqgOB4auiTyw"; 
+export const LOGO_URL = "https://lh3.googleusercontent.com/d/1dz2UDcrD_rdeqGTQH2DZqqgOB4auiTyw";
 
 export const ELEMENT_ICONS = {
   EARTH: "https://lh3.googleusercontent.com/d/1FnwqtZ10b6YNE8nEqNidvt_T2WUHaJu7",
@@ -34,3 +34,31 @@ export const BLOG_POSTS: BlogPost[] = [
   { id: 3, title: 'Why "Natural" Isn\'t Enough', category: 'Philosophy', image: 'https://picsum.photos/600/400?random=3' },
   { id: 4, title: 'The Art of Doing Nothing', category: 'Wellness', image: 'https://picsum.photos/600/400?random=4' },
 ];
+
+export type HomeElement = 'origin' | 'elements' | 'earth' | 'water' | 'future' | 'circle' | 'bigpicture';
+
+export const SECTION_CONFIG: Record<HomeElement, { color: string; path: string }> = {
+  origin: { color: '#c4cd50', path: '/' },
+  elements: { color: '#bca2d1', path: '/element-intro' },
+  earth: { color: '#d99058', path: '/mesa' },
+  water: { color: '#73a5d3', path: '/crest' },
+  future: { color: '#0b1630', path: '/upcoming' },
+  circle: { color: '#94b8b4', path: '/community' },
+  bigpicture: { color: '#dcdcdc', path: '/bigpicture' }
+};
+
+export const SNAP_STEPS = [0, 1, 2, 3, 4, 7, 8, 9, 10, 11, 12] as const;
+
+export const SNAP_ELEMENT_MAP: Record<(typeof SNAP_STEPS)[number], HomeElement> = {
+  0: 'origin',
+  1: 'origin',
+  2: 'origin',
+  3: 'origin',
+  4: 'origin',
+  7: 'elements',
+  8: 'earth',
+  9: 'water',
+  10: 'future',
+  11: 'circle',
+  12: 'bigpicture'
+};

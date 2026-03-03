@@ -34,10 +34,10 @@ export const ElementsIntro: React.FC<ElementsIntroProps> = ({ setLogoHidden, pro
 
 
     // --- SCROLL LOGIC ---
-    // Peak at 5.1vh (Arrival at Elements Intro)
-    const scrollStart = vh * 4.8;
-    const scrollPeak = vh * 5.1;
-    const scrollEnd = vh * 5.4;
+    // Peak at 7.1vh (Arrival at Elements Intro)
+    const scrollStart = vh * 6.8;
+    const scrollPeak = vh * 7.1;
+    const scrollEnd = vh * 7.4;
 
     const scrollRange = [scrollStart, scrollPeak, scrollEnd];
 
@@ -71,9 +71,9 @@ export const ElementsIntro: React.FC<ElementsIntroProps> = ({ setLogoHidden, pro
 
     const handleIconClick = (name: string) => {
         let screenIndex = 0;
-        if (name === 'Earth') screenIndex = 6.0; // Starts at 6.0
-        else if (name === 'Water') screenIndex = 7.0; // Starts at 7.0
-        else screenIndex = 8.0; // Future starts at 8.0
+        if (name === 'Earth') screenIndex = 8.0; // Starts at 8.0
+        else if (name === 'Water') screenIndex = 9.0; // Starts at 9.0
+        else screenIndex = 10.0; // Future starts at 10.0
 
         const vhVal = window.innerHeight;
         window.scrollTo({ top: (screenIndex * vhVal), behavior: 'smooth' });

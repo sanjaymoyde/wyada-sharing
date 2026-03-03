@@ -1,13 +1,8 @@
 
 import { Product } from '../types';
+import { buildApiUrl } from '../utils/api';
 
-// Helper to determine the base URL
-const getBaseUrl = () => {
-    if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
-    return import.meta.env.DEV ? 'http://localhost:5000' : '';
-};
-
-const API_URL = `${getBaseUrl()}/api/products`;
+const API_URL = buildApiUrl('/api/products');
 
 export const fetchProducts = async (): Promise<Product[]> => {
     try {

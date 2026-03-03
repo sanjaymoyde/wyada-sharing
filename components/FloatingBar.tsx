@@ -1,9 +1,10 @@
 
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { ChevronUp, ShoppingBag, Sun, Moon, X, Trash2, BookOpen, Beaker, Users, Map, Plus, Minus } from 'lucide-react';
 import { ThemeProps, CartItem } from '../types';
 import { useClickOutside } from '../hooks/useClickOutside';
+import { buildApiUrl } from '../utils/api';
 
 interface FloatingBarProps extends ThemeProps {
     cartCount?: number;
@@ -17,7 +18,7 @@ interface FloatingBarProps extends ThemeProps {
     onViewProduct: (type: 'mesa' | 'crest') => void;
     earthProduct?: any; // strict type comes from import but any is easier for now to avoid circular deps if types not exported perfectly
     waterProduct?: any;
-    updateCartQuantity: (id: string, quantity: number) => void;
+    isVisible?: boolean;
 }
 
 export const FloatingBar: React.FC<FloatingBarProps> = ({
@@ -34,9 +35,16 @@ export const FloatingBar: React.FC<FloatingBarProps> = ({
     onViewProduct,
     earthProduct,
     waterProduct,
-    updateCartQuantity
+    updateCartQuantity,
+    isVisible = true
 }) => {
     const mesaPrice = earthProduct?.variants?.[0]?.price ? Number(earthProduct.variants[0].price) : 799;
+    // ... (omitting lines 40-479 for brevity in replacement, but wait, replace_file_content replaces the whole block if I specify it. I should target specific blocks or use multi_replace if I can't capture everything. I will target the end block mainly)
+
+    // Actually, I can just replace the interface and destructured props, and then a separate replacement for the return statement part.
+    // But wait, the tool says "single contiguous block". I can't do two separate edits in one call if they are far apart.
+    // I will use multi_replace_file_content tool for this since edits are in two places (props interface/destructuring AND the render returned JSX).
+
     const crestPrice = waterProduct?.variants?.[0]?.price ? Number(waterProduct.variants[0].price) : 1299;
     const pairPrice = (mesaPrice + crestPrice) - 299; // Keeping similar discount ratio
     const pairOriginalPrice = mesaPrice + crestPrice;
@@ -49,9 +57,38 @@ export const FloatingBar: React.FC<FloatingBarProps> = ({
     const cartRef = useRef<HTMLDivElement>(null);
     const menuButtonRef = useRef<HTMLButtonElement>(null);
     const cartButtonRef = useRef<HTMLButtonElement>(null);
+    const barRef = useRef<HTMLDivElement>(null);
 
     useClickOutside(menuRef, () => setIsMenuOpen(false), menuButtonRef);
     useClickOutside(cartRef, () => setIsCartOpen(false), cartButtonRef);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const root = document.documentElement;
+        const bar = barRef.current;
+        if (!bar) return;
+
+        const updateBarHeight = () => {
+            const nextHeight = Math.ceil(bar.getBoundingClientRect().height);
+            root.style.setProperty('--floating-bar-h', `${Math.max(nextHeight, 1)}px`);
+        };
+
+        updateBarHeight();
+
+        let resizeObserver: ResizeObserver | null = null;
+        if (typeof ResizeObserver !== 'undefined') {
+            resizeObserver = new ResizeObserver(updateBarHeight);
+            resizeObserver.observe(bar);
+        }
+
+        window.addEventListener('resize', updateBarHeight);
+
+        return () => {
+            window.removeEventListener('resize', updateBarHeight);
+            resizeObserver?.disconnect();
+            root.style.removeProperty('--floating-bar-h');
+        };
+    }, []);
 
     // Grouping Logic: Automatically group mesa (799) and crest (1299) into "the pair" (1799)
     const groupedItems = useMemo(() => {
@@ -237,13 +274,7 @@ export const FloatingBar: React.FC<FloatingBarProps> = ({
         }));
 
         try {
-            // Determine API URL based on environment or configuration
-            const getBaseUrl = () => {
-                if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
-                return import.meta.env.DEV ? 'http://localhost:5000' : '';
-            };
-
-            const currentApiUrl = `${getBaseUrl()}/api/shopify/checkout`;
+            const currentApiUrl = buildApiUrl('/api/shopify/checkout');
 
             const response = await fetch(currentApiUrl, {
                 method: 'POST',
@@ -291,7 +322,10 @@ export const FloatingBar: React.FC<FloatingBarProps> = ({
     };
 
     return (
-        <div className="fixed bottom-6 left-0 right-0 flex justify-center z-[200] pointer-events-none">
+        <div
+            className="fixed left-0 right-0 flex justify-center z-[200] pointer-events-none"
+            style={{ bottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+        >
             <div className="relative flex flex-col items-center">
 
                 <AnimatePresence>
@@ -302,7 +336,7 @@ export const FloatingBar: React.FC<FloatingBarProps> = ({
                             initial="hidden"
                             animate="visible"
                             exit="exit"
-                            className={`pointer-events-auto absolute bottom-full mb-2 w-[90vw] max-w-xl rounded-3xl border flex flex-col overflow-hidden max-h-[60vh] ${glassPanelClass}`}
+                            className={`pointer-events-auto absolute bottom-full mb-2 w-[90vw] max-w-xl rounded-[6vw] md:rounded-3xl border flex flex-col overflow-hidden max-h-[60vh] ${glassPanelClass}`}
                         >
                             <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
                                 <motion.div key="tools" custom={-1} variants={tabContentVariants} initial="hidden" animate="visible" exit="exit" className="grid grid-cols-1 gap-2">
@@ -344,11 +378,11 @@ export const FloatingBar: React.FC<FloatingBarProps> = ({
                                             </button>
                                             <div className="flex justify-between items-start pr-8">
                                                 <div className="flex flex-col justify-start">
-                                                    <h3 className="text-2xl font-bold text-white tracking-tight leading-none">crest</h3>
+                                                    <h3 className={`text-2xl font-bold tracking-tight leading-none ${isNight ? 'text-brand-lime' : 'text-white'}`}>crest</h3>
                                                     <p className="text-[10px] text-white/90 font-medium leading-tight mt-0.5">skin sorbet</p>
                                                 </div>
                                             </div>
-                                            <div className="mt-2 text-white font-bold text-lg">₹{crestPrice}</div>
+                                            <div className={`mt-2 font-bold text-lg ${isNight ? 'text-brand-lime' : 'text-white'}`}>₹{crestPrice}</div>
                                         </div>
                                     </div>
 
@@ -357,11 +391,11 @@ export const FloatingBar: React.FC<FloatingBarProps> = ({
                                         <div className="absolute inset-0 bg-gradient-to-r from-brand-mesa/20 to-brand-crest/20 opacity-50 group-hover:opacity-80 transition-opacity" />
                                         <div className="relative z-10 flex flex-col">
                                             <span className="text-[9px] uppercase font-bold text-brand-lime tracking-wider mb-1">Complete Set</span>
-                                            <h3 className="text-xl font-bold text-white">the pair</h3>
+                                            <h3 className={`text-xl font-bold ${isNight ? 'text-brand-lime' : 'text-white'}`}>the pair</h3>
                                         </div>
                                         <div className="relative z-10 flex items-center gap-4">
                                             <div className="text-right">
-                                                <div className="font-bold text-white text-lg">₹{pairPrice}</div>
+                                                <div className={`font-bold text-lg ${isNight ? 'text-brand-lime' : 'text-white'}`}>₹{pairPrice}</div>
                                                 <div className="text-xs text-white/40 line-through">₹{pairOriginalPrice}</div>
                                             </div>
                                             <button onClick={handleAddBundle} className="bg-brand-lime text-black px-4 py-2 rounded-full font-bold text-xs uppercase tracking-widest hover:bg-white transition-colors shadow-sm">Add</button>
@@ -400,7 +434,7 @@ export const FloatingBar: React.FC<FloatingBarProps> = ({
                             initial="hidden"
                             animate="visible"
                             exit="exit"
-                            className={`pointer-events-auto absolute bottom-full mb-2 w-80 rounded-3xl p-6 border flex flex-col max-h-[60vh] ${glassPanelClass}`}
+                            className={`pointer-events-auto absolute bottom-full mb-2 w-80 rounded-[6vw] md:rounded-3xl p-6 border flex flex-col max-h-[60vh] ${glassPanelClass}`}
                         >
                             <div className={`flex items-center justify-between mb-6 pb-4 border-b ${isNight ? 'border-white/10' : 'border-black/10'}`}>
                                 <h3 className="font-bold text-lg">Your Routine</h3>
@@ -478,9 +512,14 @@ export const FloatingBar: React.FC<FloatingBarProps> = ({
                 </AnimatePresence>
 
                 <motion.div
+                    ref={barRef}
                     initial={{ y: 100, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 1, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                    animate={{
+                        y: isVisible ? 0 : 100,
+                        opacity: isVisible ? 1 : 0,
+                        pointerEvents: isVisible ? 'auto' : 'none'
+                    }}
+                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                     className={`pointer-events-auto group relative flex items-center gap-1 px-2 py-2 rounded-full backdrop-blur-2xl border transition-all duration-500 z-50 ${pillClass}`}
                 >
                     <button onClick={toggleTheme} className={`p-2.5 rounded-full transition-colors duration-300 ${buttonHoverClass}`} aria-label="Toggle Theme">

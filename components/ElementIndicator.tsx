@@ -67,23 +67,16 @@ const IndicatorItem = memo(({
     const handleScrollTo = () => {
         if (!el.clickable) return;
 
-        if (el.id === 'earth') {
-            onViewProduct && onViewProduct('mesa');
-            return;
-        }
-        if (el.id === 'water') {
-            onViewProduct && onViewProduct('crest');
-            return;
-        }
+
 
         let screenIndex = 0;
         if (el.id === 'origin') screenIndex = 0;
-        else if (el.id === 'elements') screenIndex = 5.0;
-        else if (el.id === 'earth') screenIndex = 6.0;
-        else if (el.id === 'water') screenIndex = 7.0;
-        else if (el.id === 'future') screenIndex = 8.0;
-        else if (el.id === 'circle') screenIndex = 9.0;
-        else if (el.id === 'bigpicture') screenIndex = 10.0;
+        else if (el.id === 'elements') screenIndex = 7.0;
+        else if (el.id === 'earth') screenIndex = 8.0;
+        else if (el.id === 'water') screenIndex = 9.0;
+        else if (el.id === 'future') screenIndex = 10.0;
+        else if (el.id === 'circle') screenIndex = 11.0;
+        else if (el.id === 'bigpicture') screenIndex = 12.0;
 
         onNavigate(screenIndex);
     };
@@ -91,7 +84,7 @@ const IndicatorItem = memo(({
     const handleDashClick = (e: React.MouseEvent, stepIndex: number) => {
         e.stopPropagation();
         e.preventDefault();
-        onNavigate((stepIndex / (TOTAL_ORIGIN_STEPS - 1)) * 5.0); // Map to 0-5 range
+        onNavigate(stepIndex * 1.0); // Map 0-4 dashes to 0, 1, 2, 3, 4 screens
     };
 
     return (
@@ -143,10 +136,10 @@ const IndicatorItem = memo(({
                     )}
                 </motion.button>
 
-                {el.id === 'origin' && snapped === 'origin' && (
+                {el.id === 'origin' && active === 'origin' && (
                     <motion.div
                         initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                        animate={{ opacity: 1, height: 60, marginTop: 8 }}
+                        animate={{ opacity: 1, height: 36, marginTop: 8 }}
                         exit={{ opacity: 0, height: 0, marginTop: 0 }}
                         className="flex flex-col gap-1.5 w-full will-change-[height,opacity]"
                     >
@@ -198,7 +191,7 @@ export const ElementIndicator: React.FC<ElementIndicatorProps> = ({ active, snap
     const showChildren = snapped === 'elements' || snapped === 'earth' || snapped === 'water' || snapped === 'future';
 
     return (
-        <div className={`fixed right-6 md:right-8 top-0 h-screen z-[100] flex flex-col items-end justify-start pt-20 gap-6 pointer-events-none ${isNight ? 'text-brand-lime' : 'text-white'}`}>
+        <div className={`fixed right-6 md:right-8 top-0 h-[var(--app-vh)] z-[140] flex flex-col items-end justify-start pt-20 gap-6 pointer-events-none ${isNight ? 'text-brand-lime' : 'text-white'}`}>
             <div className={`flex flex-col items-end pointer-events-auto transition-all duration-500 ${expanded ? 'bg-black/20 backdrop-blur-xl p-4 rounded-2xl' : ''}`}>
                 {elements.map((el, index) => {
                     const isChildVisible = !el.isChild || showChildren;

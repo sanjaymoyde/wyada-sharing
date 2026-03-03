@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Manifesto } from '../components/Manifesto';
 import { Toast } from '../components/Toast';
@@ -10,9 +10,11 @@ import { WaterCarousel } from '../components/WaterCarousel';
 import { ComingSoonCarousel } from '../components/ComingSoonCarousel';
 import { CircleIntro } from '../components/CircleIntro';
 import { BigPictureCarousel } from '../components/BigPictureCarousel';
-import { motion } from 'framer-motion';
+import { useScroll, useTransform } from 'framer-motion';
 import { ElementIndicator } from '../components/ElementIndicator';
 import { CartItem, Product } from '../types';
+import { HomeElement, SECTION_CONFIG, SNAP_ELEMENT_MAP } from '../constants';
+import { useScrollSnap } from '../hooks/useScrollSnap';
 
 interface HomeProps {
     isNight: boolean;
@@ -30,10 +32,14 @@ interface HomeProps {
     allProducts: Product[];
     showToast: boolean;
     setShowToast: (show: boolean) => void;
-    initialSection?: 'origin' | 'elements' | 'earth' | 'water' | 'future' | 'circle' | 'bigpicture';
+    initialSection?: HomeElement;
     initialMenuOpen?: boolean;
     initialCartOpen?: boolean;
 }
+
+const MANIFESTO_RETURN_INDEX = 4;
+const LAST_PATH_STORAGE_KEY = 'wayda:last-path';
+const LAST_PATH_MAX_AGE_MS = 15000;
 
 export const Home: React.FC<HomeProps> = ({
     isNight,
@@ -56,250 +62,135 @@ export const Home: React.FC<HomeProps> = ({
     initialCartOpen
 }) => {
     const navigate = useNavigate();
-    const [activeElement, setActiveElement] = useState<'origin' | 'elements' | 'earth' | 'water' | 'future' | 'circle' | 'bigpicture' | null>('origin');
-    const [snappedElement, setSnappedElement] = useState<'origin' | 'elements' | 'earth' | 'water' | 'future' | 'circle' | 'bigpicture' | null>('origin');
-    const [originStep, setOriginStep] = useState<number>(0);
+    const location = useLocation();
+
+    const isArticleOpen = false;
     const [hideLogo, setHideLogo] = useState(false);
 
-    const isAutoScrolling = useRef(false);
-    const autoScrollTarget = useRef(0);
-    const autoScrollListener = useRef<any>(null);
-    const autoScrollTimer = useRef<any>(null);
+    const {
+        activeElement,
+        snappedElement,
+        originStep,
+        handleNavigate,
+        viewportHeightRef,
+        getVh
+    } = useScrollSnap({ isMenuOpen, isCartOpen, isArticleOpen });
 
-    const handleNavigate = useCallback((index: number) => {
-        let target = 0;
-        const vh = window.innerHeight;
+    const { scrollY } = useScroll();
+    const scrollIndex = useTransform(scrollY, (latest) => {
+        return latest / viewportHeightRef.current;
+    });
 
-        const getOffset = (id: string) => {
-            const el = document.getElementById(id);
-            return el ? el.offsetTop : null;
-        };
+    const [previousPath, setPreviousPath] = useState<string | null>(null);
 
-        if (index >= 10.0) target = (getOffset('element-bigpicture') ?? (10 * vh));
-        else if (index >= 9.0) target = (getOffset('section-circle') ?? (9 * vh));
-        else if (index >= 8.0) target = (getOffset('element-future') ?? (8 * vh));
-        else if (index >= 7.0) target = (getOffset('element-water') ?? (7 * vh));
-        else if (index >= 6.0) target = (getOffset('element-earth') ?? (6 * vh));
-        else if (index >= 5.0) target = (getOffset('section-elements') ?? (5 * vh));
-        else target = index * vh;
-
-        isAutoScrolling.current = true;
-        autoScrollTarget.current = target;
-
-        document.documentElement.classList.add('no-snap');
-
-        if (autoScrollListener.current) {
-            window.removeEventListener('scroll', autoScrollListener.current);
-        }
-        if (autoScrollTimer.current) {
-            clearTimeout(autoScrollTimer.current);
-        }
-
-        const scrollHandler = () => {
-            if (autoScrollTimer.current) clearTimeout(autoScrollTimer.current);
-            autoScrollTimer.current = setTimeout(() => {
-                document.documentElement.classList.remove('no-snap');
-                isAutoScrolling.current = false;
-                if (autoScrollListener.current) {
-                    window.removeEventListener('scroll', autoScrollListener.current);
+    // Initial Path Tracking (SSR Safe)
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        try {
+            const raw = window.sessionStorage.getItem(LAST_PATH_STORAGE_KEY);
+            if (raw) {
+                const parsed = JSON.parse(raw) as { path?: unknown; updatedAt?: unknown };
+                if (typeof parsed.path === 'string' && typeof parsed.updatedAt === 'number') {
+                    if ((Date.now() - parsed.updatedAt) <= LAST_PATH_MAX_AGE_MS) {
+                        setPreviousPath(parsed.path);
+                    }
                 }
-                autoScrollListener.current = null;
-                autoScrollTimer.current = null;
-            }, 800);
-        };
-
-        autoScrollListener.current = scrollHandler;
-        window.addEventListener('scroll', scrollHandler, { passive: true });
-        window.scrollTo({ top: target, behavior: 'smooth' });
+            }
+        } catch { /* ignore */ }
     }, []);
 
-    const getElementAtScroll = (screenIndex: number) => {
-        if (screenIndex >= 10.0) return 'bigpicture';
-        if (screenIndex >= 9.0) return 'circle';
-        if (screenIndex >= 8.0) return 'future';
-        if (screenIndex >= 7.0) return 'water';
-        if (screenIndex >= 6.0) return 'earth';
-        if (screenIndex >= 5.0) return 'elements';
-        return 'origin';
-    };
-
-    const handleWheel = (e: React.WheelEvent) => {
-        if (isAutoScrolling.current) return;
-        const vh = window.innerHeight;
-        const direction = e.deltaY > 0 ? 1 : -1;
-        const currentIndex = Math.round(window.scrollY / vh);
-        const nextIndex = Math.max(0, Math.min(10, currentIndex + direction)); // Max index is 10 for bigpicture
-
-        if (nextIndex !== currentIndex) {
-            handleNavigate(nextIndex);
-        }
-    };
-
-    const touchStart = useRef(0);
-    const handleTouchStart = (e: React.TouchEvent) => {
-        touchStart.current = e.touches[0].clientY;
-    };
-
-    const handleTouchEnd = (e: React.TouchEvent) => {
-        if (isAutoScrolling.current) return;
-        const touchEnd = e.changedTouches[0].clientY;
-        const delta = touchStart.current - touchEnd;
-        const vh = window.innerHeight;
-
-        if (Math.abs(delta) > 50) {
-            const direction = delta > 0 ? 1 : -1;
-            const currentIndex = Math.round(window.scrollY / vh);
-            const nextIndex = Math.max(0, Math.min(10, currentIndex + direction)); // Max index is 10 for bigpicture
-            handleNavigate(nextIndex);
-        }
-    };
-
+    // Handle path-based initial deep links
     useEffect(() => {
-        const handleUpdate = () => {
-            const scrollY = window.scrollY;
-            const vh = window.innerHeight;
-            const screenIndex = scrollY / vh;
+        if (!initialSection || typeof window === 'undefined') return;
 
-            const originIndex = Math.round(screenIndex);
-            const clampedStep = Math.max(0, Math.min(originIndex, 4));
+        const cameFromElementsIntro = location.pathname === '/' && previousPath === '/element-intro';
 
-            const newActive = getElementAtScroll(screenIndex);
-
-            // console.log('Scroll Debug:', { scrollY, vh, screenIndex, newActive, activeElement });
-
-            setOriginStep(prev => prev === clampedStep ? prev : clampedStep);
-            setActiveElement(prev => prev === newActive ? prev : newActive);
-            setSnappedElement(prev => prev === newActive ? prev : newActive);
-        };
-
-        window.addEventListener('scroll', handleUpdate, { passive: true });
-        handleUpdate();
-
-        return () => {
-            window.removeEventListener('scroll', handleUpdate);
-        };
-    }, []);
-
-    useEffect(() => {
-        // Handle path-based initial deep links
-        if (!initialSection || initialSection === 'origin') return;
-
-        // Small timeout to ensure DOM is ready and layout is stable
-        setTimeout(() => {
-            let targetId = '';
-            switch (initialSection) {
-                case 'water': targetId = 'element-water'; break;
-                case 'future': targetId = 'element-future'; break;
-                case 'circle': targetId = 'section-circle'; break;
-                case 'bigpicture': targetId = 'element-bigpicture'; break;
+        const timeoutId = window.setTimeout(() => {
+            let targetIndex = 0;
+            if (cameFromElementsIntro) {
+                targetIndex = MANIFESTO_RETURN_INDEX;
+            } else {
+                const step = (Object.entries(SNAP_ELEMENT_MAP) as any).find(
+                    ([_, element]: [any, HomeElement]) => element === initialSection
+                );
+                targetIndex = step ? parseInt(step[0]) : 0;
             }
 
-            const el = document.getElementById(targetId);
-            if (el) {
-                window.scrollTo({ top: el.offsetTop, behavior: 'instant' });
-            }
+            window.scrollTo({ top: targetIndex * getVh(), behavior: 'auto' });
         }, 100);
-    }, [initialSection]);
+        return () => window.clearTimeout(timeoutId);
+    }, [getVh, initialSection, location.pathname, previousPath]);
 
-    // Handle Initial Menu Open
+    // Update URL and Theme on Scroll or State Change
     useEffect(() => {
-        if (initialMenuOpen) {
-            setIsMenuOpen(true);
-        }
-    }, [initialMenuOpen, setIsMenuOpen]);
+        if (typeof window === 'undefined') return;
 
-    // Handle Initial Cart Open
-    useEffect(() => {
-        if (initialCartOpen) {
-            setIsCartOpen(true);
-        }
-    }, [initialCartOpen, setIsCartOpen]);
-
-    // Update URL on Scroll or Menu/Cart State
-    useEffect(() => {
-        // Priority 1: Cart
-        if (isCartOpen) {
-            if (window.location.pathname !== '/cart') {
-                window.history.replaceState(null, '', '/cart');
-            }
-            return;
+        // 1. URL Syncing
+        let currentPath = '/';
+        if (isCartOpen) currentPath = '/cart';
+        else if (isMenuOpen) currentPath = '/menu';
+        else if (activeElement) {
+            currentPath = SECTION_CONFIG[activeElement]?.path || '/';
         }
 
-        // Priority 2: Menu
-        if (isMenuOpen) {
-            if (window.location.pathname !== '/menu') {
-                window.history.replaceState(null, '', '/menu');
-            }
-            return;
+        if (window.location.pathname !== currentPath) {
+            window.history.replaceState(null, '', currentPath);
         }
 
-        if (!activeElement) return;
+        // 2. Theme Syncing (Address Bar + Body)
+        const activeColor = isNight ? '#020408' : (activeElement ? SECTION_CONFIG[activeElement].color : '#c4cd50');
 
-        let path = '/';
-        switch (activeElement) {
-            case 'elements': path = '/element-intro'; break;
-            case 'earth': path = '/mesa'; break;
-            case 'water': path = '/crest'; break;
-            case 'future': path = '/upcoming'; break;
-            case 'circle': path = '/community'; break;
-            case 'bigpicture': path = '/bigpicture'; break;
-            case 'origin': path = '/'; break;
-        }
+        // Force strict styling for mobile browsers that resist CSS transitions
+        const transitionStyle = 'background-color 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+        document.body.style.setProperty('transition', transitionStyle, 'important');
+        document.documentElement.style.setProperty('transition', transitionStyle, 'important');
 
-        // Use replaceState to update URL without adding to history stack
-        if (window.location.pathname !== path) {
-            window.history.replaceState(null, '', path);
-        }
-    }, [activeElement, isMenuOpen, isCartOpen]);
+        document.body.style.backgroundColor = activeColor;
+        document.documentElement.style.backgroundColor = activeColor;
+        document.documentElement.style.setProperty('--current-theme', activeColor);
 
-    // Dynamic Theme Color for Browser Address Bar
-    useEffect(() => {
         const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-        let color = isNight ? '#020408' : '#D1E231'; // Default Origin Color
-
-        switch (activeElement) {
-            case 'origin':
-                color = isNight ? '#020408' : '#D1E231';
-                break;
-            case 'elements':
-                color = '#bca2d1';
-                break;
-            case 'earth':
-                color = isNight ? '#000000' : '#d99058'; // brand-mesa approx
-                break;
-            case 'water':
-                color = isNight ? '#000000' : '#73a5d3'; // brand-crest approx
-                break;
-            case 'future':
-                color = isNight ? '#000000' : '#111827';
-                break;
-            case 'circle':
-                color = '#94b8b4';
-                break;
-            case 'bigpicture':
-                color = isNight ? '#000000' : '#e0e0e0';
-                break;
-        }
-
         if (metaThemeColor) {
-            metaThemeColor.setAttribute('content', color);
+            metaThemeColor.setAttribute('content', activeColor);
         } else {
-            const meta = document.createElement('meta');
-            meta.name = 'theme-color';
-            meta.content = color;
-            document.head.appendChild(meta);
+            const meta = document.head.querySelector('meta[name="theme-color"]') || document.createElement('meta');
+            (meta as any).name = 'theme-color';
+            (meta as any).content = activeColor;
+            if (!document.head.contains(meta)) document.head.appendChild(meta);
         }
-    }, [activeElement, isNight]);
+    }, [activeElement, isMenuOpen, isCartOpen, isNight]);
+
+    // Track Navigation Context
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        try {
+            window.sessionStorage.setItem(
+                LAST_PATH_STORAGE_KEY,
+                JSON.stringify({ path: location.pathname, updatedAt: Date.now() })
+            );
+        } catch { /* ignore */ }
+    }, [location.pathname]);
+
+    // Handle Initial Menu/Cart
+    useEffect(() => {
+        if (initialMenuOpen) setIsMenuOpen(true);
+        if (initialCartOpen) setIsCartOpen(true);
+    }, [initialMenuOpen, initialCartOpen, setIsMenuOpen, setIsCartOpen]);
 
     const handleViewProduct = (type: 'mesa' | 'crest') => {
         navigate(`/product/${type}`);
     };
 
-    const bgClass = isNight ? 'bg-brand-night' : 'bg-brand-lime';
+    const bgClass = isNight ? 'bg-brand-night' : 'bg-[var(--current-theme)]';
 
     return (
         <div
-            className={`app relative min-h-screen w-full transition-colors duration-700 ease-in-out ${bgClass} font-sans font-medium`}
+            className={`app relative w-full ${bgClass} font-sans font-medium overscroll-y-none transition-colors duration-700`}
+            style={{
+                minHeight: 'var(--app-vh, 100vh)',
+                backgroundColor: isNight ? '#020408' : (activeElement ? SECTION_CONFIG[activeElement].color : '#c4cd50'),
+                transition: 'background-color 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
         >
             <Navbar isNight={isNight} hideLogo={hideLogo} onLogoClick={() => handleNavigate(0)} />
             <ElementIndicator
@@ -312,11 +203,16 @@ export const Home: React.FC<HomeProps> = ({
             />
             <Toast show={showToast} message="Blue light reduced." onClose={() => setShowToast(false)} />
 
-            <main className="w-full relative">
+            <main
+                className="w-full relative"
+                data-snapped={snappedElement || 'none'}
+            >
                 <Manifesto isNight={isNight} />
                 <ElementsIntro setLogoHidden={setHideLogo} products={allProducts} />
                 <EarthCarousel
                     isNight={isNight}
+                    progress={scrollIndex}
+                    isActive={activeElement === 'earth'}
                     addToCart={() => addToCart({
                         id: 'mesa',
                         variantId: earthProduct?.variants?.[0]?.id || 0,
@@ -329,6 +225,8 @@ export const Home: React.FC<HomeProps> = ({
                 />
                 <WaterCarousel
                     isNight={isNight}
+                    progress={scrollIndex}
+                    isActive={activeElement === 'water'}
                     addToCart={() => addToCart({
                         id: 'crest',
                         variantId: waterProduct?.variants?.[0]?.id || 0,
@@ -359,6 +257,7 @@ export const Home: React.FC<HomeProps> = ({
                 earthProduct={earthProduct}
                 waterProduct={waterProduct}
                 updateCartQuantity={updateCartQuantity}
+                isVisible={!isArticleOpen}
             />
 
             <footer className={`relative z-[90] py-10 text-center text-sm ${isNight ? 'bg-black text-brand-lime/40' : 'bg-brand-lime text-white/40'}`}>

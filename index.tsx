@@ -14,3 +14,22 @@ root.render(
     <App />
   </React.StrictMode>
 );
+
+const revealApp = () => {
+  const htmlClassList = document.documentElement.classList;
+  htmlClassList.remove('app-booting');
+  htmlClassList.add('app-ready');
+};
+
+const bootReveal = async () => {
+  try {
+    if ('fonts' in document) {
+      await document.fonts.ready;
+    }
+  } catch {
+    // Fall back to reveal on next frame.
+  }
+  requestAnimationFrame(revealApp);
+};
+
+void bootReveal();

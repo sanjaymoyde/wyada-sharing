@@ -1,26 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Fallback until JS sets an exact viewport pixel height. */
+  --app-vh: 100vh;
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --app-vh: 100dvh;
+  }
+}
+
 html {
-  overscroll-behavior-y: none;
+  position: relative;
   scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  overscroll-behavior-y: none;
+  transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html.no-snap,
+body.no-snap {
+  scroll-snap-type: none !important;
 }
 
 body {
+  position: relative;
+  min-height: var(--app-vh, 100vh);
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #c4cd50;
+  transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-
-
-
-/* Helper to disable snapping during auto-scroll */
-html.no-snap {
-  scroll-snap-type: none !important;
-  scroll-behavior: smooth !important;
+#root {
+  min-height: var(--app-vh, 100vh);
 }
 
-/* Ensure text doesn't jitter during the transform */
-body {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* Hide scrollbar for clean aesthetics but allow scroll */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(196, 205, 80, 0.5);
+  border-radius: 4px;
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Filter to turn White to Brand Lime (#c4cd50) */
+.filter-brand-lime {
+  filter: brightness(0) invert(86%) sepia(19%) saturate(836%) hue-rotate(29deg) brightness(91%) contrast(87%);
+}
+
+/* Filter to turn White to Brand Mesa (#E89C6C) */
+.filter-brand-mesa {
+  filter: brightness(0) saturate(100%) invert(71%) sepia(45%) saturate(708%) hue-rotate(324deg) brightness(94%) contrast(86%);
+}
+
+/* Filter to turn White to Brand Crest (#5D9BCE) */
+.filter-brand-crest {
+  filter: brightness(0) saturate(100%) invert(68%) sepia(11%) saturate(1818%) hue-rotate(178deg) brightness(89%) contrast(84%);
 }

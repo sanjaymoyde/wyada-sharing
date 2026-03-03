@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { motion, PanInfo } from 'framer-motion';
 import { ArrowRight, ChevronLeft, ChevronRight, Users } from 'lucide-react';
 import { BLOG_POSTS } from '../constants';
@@ -12,6 +12,8 @@ export const BigPictureCarousel: React.FC<BigPictureCarouselProps> = ({ isNight 
   const [index, setIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const totalSlides = BLOG_POSTS.length;
+  const wheelAccumRef = useRef(0);
+  const wheelLockRef = useRef(0);
 
   React.useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -29,6 +31,34 @@ export const BigPictureCarousel: React.FC<BigPictureCarouselProps> = ({ isNight 
     }
   };
 
+  const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    const absX = Math.abs(event.deltaX);
+    const absY = Math.abs(event.deltaY);
+    const isHorizontalIntent = absX > 2 && absX > absY * 1.1;
+
+    if (!isHorizontalIntent) {
+      wheelAccumRef.current = 0;
+      return;
+    }
+
+    event.preventDefault();
+
+    const now = Date.now();
+    if (now - wheelLockRef.current < 220) return;
+
+    wheelAccumRef.current += event.deltaX;
+    if (Math.abs(wheelAccumRef.current) < 65) return;
+
+    const direction = wheelAccumRef.current > 0 ? 1 : -1;
+    wheelAccumRef.current = 0;
+    wheelLockRef.current = now;
+
+    setIndex((prev) => {
+      if (direction > 0) return Math.min(prev + 1, totalSlides - 1);
+      return Math.max(prev - 1, 0);
+    });
+  };
+
   const bgColor = isNight ? 'bg-black' : 'bg-[#dcdcdc]';
   const textColor = isNight ? 'text-white' : 'text-black';
   const cardBg = isNight ? 'bg-white/10 border-white/10' : 'bg-black border-none';
@@ -36,12 +66,16 @@ export const BigPictureCarousel: React.FC<BigPictureCarouselProps> = ({ isNight 
   return (
     <section
       id="element-bigpicture"
-      className="relative h-[200vh] w-full -mt-[calc(100vh+1px)] snap-start snap-always z-[80]"
+      className="relative w-full snap-start snap-always z-[80]"
+      style={{ height: 'calc(var(--app-vh) * 2)', marginTop: 'calc(var(--app-vh) * -1)' }}
     >
-      <div className={`sticky top-0 h-[100dvh] w-full ${bgColor} overflow-hidden shadow-[0_-50px_50px_rgba(0,0,0,0.3)] transition-colors duration-700 flex flex-col-reverse md:flex-col`}>
+      <div className={`sticky top-0 w-full ${bgColor} overflow-hidden shadow-[0_-50px_50px_rgba(0,0,0,0.3)] transition-colors duration-700 flex flex-col-reverse md:flex-col`} style={{ height: 'var(--app-vh)' }}>
 
         {/* TOP: CAROUSEL */}
-        <div className="w-full md:max-w-[calc(100%-6rem)] h-[65vh] relative flex flex-col justify-start -mt-20 md:mt-0 md:pt-14 overflow-hidden pl-4 ">
+        <div
+          className="w-full md:max-w-[calc(100%-6rem)] h-[65vh] relative flex flex-col justify-start -mt-20 md:mt-0 md:pt-14 overflow-hidden pl-4 "
+          onWheel={handleWheel}
+        >
           <div className="w-full overflow-visible flex items-center justify-start">
             <motion.div
               className="flex"
