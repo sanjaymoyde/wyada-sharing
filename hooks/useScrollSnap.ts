@@ -163,7 +163,6 @@ export const useScrollSnap = ({ isMenuOpen, isCartOpen, isArticleOpen }: UseScro
                     return;
                 }
             }
-
             const mappedStep = Math.floor((screenIndex / MANIFESTO_SCREENS) * TOTAL_ORIGIN_STEPS);
             const clampedStep = Math.max(0, Math.min(mappedStep, TOTAL_ORIGIN_STEPS - 1));
             setOriginStep(clampedStep);
