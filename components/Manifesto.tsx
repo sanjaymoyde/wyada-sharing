@@ -10,10 +10,9 @@ const CONFIG = {
     screens: 7,
     scrollIndexMax: 7,
     lineRanges: {
-        // Shifted later than the single-page reference so hero gets its own phase inside this snapped section.
-        pollution: [0.28, 0.46] as [number, number],
-        blueLight: [0.50, 0.68] as [number, number],
-        stress: [0.72, 0.90] as [number, number],
+        pollution: [0.08, 0.28] as [number, number],
+        blueLight: [0.25, 0.45] as [number, number],
+        stress: [0.42, 0.62] as [number, number],
     },
 };
 
@@ -159,8 +158,8 @@ const AnimatedChar: React.FC<{
         const pv = toNumber(p);
         if (pv <= letterStart || pv >= letterEnd) return 0;
         const t = (pv - letterStart) / letterDuration;
-        if (t < 0.25) return t / 0.25;
-        if (t > 0.85) return (1 - t) / 0.15;
+        if (t < 0.10) return t / 0.10;
+        if (t > 0.90) return (1 - t) / 0.10;
         return 1;
     });
 
@@ -321,7 +320,7 @@ export const Manifesto: React.FC<ManifestoProps> = ({ isNight }) => {
 
     const { scrollYProgress } = useScroll({
         target: containerRef,
-        offset: ['start start', 'end start'],
+        offset: ['start start', 'end end'],
     });
 
     const smoothProgress = useSpring(scrollYProgress, {
@@ -330,11 +329,11 @@ export const Manifesto: React.FC<ManifestoProps> = ({ isNight }) => {
         restDelta: 0.001,
     });
 
-    const heroOpacity = useTransform(smoothProgress, [0.0, 0.18, 0.30], [1, 1, 0]);
-    const heroY = useTransform(smoothProgress, [0.0, 0.30], [0, -220]);
+    const heroOpacity = useTransform(smoothProgress, [0.0, 0.05, 0.12], [1, 1, 0]);
+    const heroY = useTransform(smoothProgress, [0.0, 0.16], [0, -220]);
 
-    const outroOpacity = useTransform(smoothProgress, [0.86, 0.94, 1.0], [0, 1, 1]);
-    const outroY = useTransform(smoothProgress, [0.86, 0.96], [40, 0]);
+    const outroOpacity = useTransform(smoothProgress, [0.58, 0.66, 1.0], [0, 1, 1]);
+    const outroY = useTransform(smoothProgress, [0.58, 0.66], [40, 0]);
 
     const scrollPromptOpacity = useTransform(smoothProgress, [0.0, 0.80, 0.88], [1, 1, 0]);
     const scrollPromptY = useTransform(smoothProgress, [0.0, 0.80, 0.88], [0, 0, -50]);
