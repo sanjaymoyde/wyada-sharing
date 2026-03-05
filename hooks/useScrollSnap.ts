@@ -182,7 +182,6 @@ export const useScrollSnap = ({ isMenuOpen, isCartOpen, isArticleOpen }: UseScro
 
             setSnappedElement(getElementAtScroll(screenIndex));
         };
-
         const win = window as any;
         win.addEventListener('scroll', handleScroll, { passive: true });
         win.addEventListener('scrollend', handleScrollEnd);
