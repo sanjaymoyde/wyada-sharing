@@ -107,11 +107,12 @@ export const ElementsIntro: React.FC<ElementsIntroProps> = ({ setLogoHidden, pro
         <section
             id="section-elements"
             ref={containerRef}
-            // h-[200vh] ensures this stays pinned at top while next section (Earth) slides in from 16.0vh
+            // ensures this stays pinned at top while next section (Earth) slides in
             // -mt-[1px] fixes the green line gap issue by overlapping slightly
-            className="relative h-[200vh] w-full snap-start snap-always z-[30] -mt-[1px]"
+            className="relative w-full snap-start snap-always z-[30] -mt-[1px]"
+            style={{ height: 'calc(var(--app-vh) * 2)' }}
         >
-            <div className="sticky top-0 h-[100dvh] w-full bg-[#bca2d1] overflow-hidden flex flex-col items-center justify-start">
+            <div className="sticky top-0 w-full bg-[#bca2d1] overflow-hidden flex flex-col items-center justify-start" style={{ height: 'var(--app-vh)' }}>
 
                 {createPortal(
                     isProxyActive && (
