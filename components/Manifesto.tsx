@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { motion, MotionValue, Variants, useScroll, useSpring, useTransform } from 'framer-motion';
+import { motion, MotionValue, Variants, useScroll, useSpring, useTransform, useMotionValueEvent } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 
 interface ManifestoProps {
@@ -16,14 +16,17 @@ const CONFIG = {
     },
 };
 
-const TerrainCanvas: React.FC<{ isNight: boolean; progress: MotionValue<number> }> = ({ isNight, progress }) => {
+interface Point3D {
+    x: number; y: number; z: number; originalZ: number;
+}
+
+const GridCanvas: React.FC<{ isNight: boolean; progress: MotionValue<number> }> = ({ isNight, progress }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const smoothProgress = useSpring(progress, {
-        stiffness: 30,
-        damping: 15,
-        mass: 0.5,
-        restDelta: 0.0001,
-    }) as unknown as MotionValue<number>;
+    const scrollRef = useRef(0);
+
+    useMotionValueEvent(progress, "change", (latest) => {
+        scrollRef.current = latest;
+    });
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -33,105 +36,194 @@ const TerrainCanvas: React.FC<{ isNight: boolean; progress: MotionValue<number> 
 
         let width = window.innerWidth;
         let height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
 
-        const cols = 40;
-        const rows = 30;
-        const scale = 120;
+        const fov = 400;
+        const viewDist = 100;
+        const gridWidth = 6000;
+        const gridDepth = 6000;
+        const cols = 50;
+        const rows = 50;
+        const floorY = 350;
+        const camY = 0;
+        const spacingZ = gridDepth / rows;
 
-        // Keep allocations out of the render loop.
-        const projX = new Float32Array(rows * cols);
-        const projY = new Float32Array(rows * cols);
-        const projZ = new Float32Array(rows * cols);
+        const points: Point3D[] = [];
+        const forestMap: number[] = [];
+        const cityMap: number[] = [];
+        let mouse = { x: -1000, y: -1000 };
 
-        const render = (p: number) => {
-            ctx.clearRect(0, 0, width, height);
+        const initGrid = () => {
+            points.length = 0;
+            forestMap.length = 0;
+            cityMap.length = 0;
+            const spacingX = gridWidth / cols;
+            const zStart = -200;
 
-            const scrollOffset = p * 4000;
-            const zOffset = scrollOffset / scale;
-            const startZ = Math.floor(zOffset);
-            const zShift = (zOffset - startZ) * scale;
+            for (let r = 0; r <= rows; r++) {
+                for (let c = 0; c <= cols; c++) {
+                    const x = (c * spacingX) - (gridWidth / 2);
+                    const z = r * spacingZ + zStart;
+                    const y = floorY;
 
-            ctx.strokeStyle = isNight ? 'rgba(196, 205, 80, 0.25)' : 'rgba(255, 255, 255, 0.25)';
-            ctx.lineWidth = 1;
+                    const landscapeNoise = Math.sin(x * 0.004) * 60 + Math.cos(z * 0.005) * 50 + Math.sin(x * 0.015 + z * 0.01) * 15;
+                    const forestY = y + landscapeNoise;
 
-            for (let y = 0; y < rows; y++) {
-                for (let x = 0; x < cols; x++) {
-                    const idx = y * cols + x;
-                    const worldX = (x - cols / 2) * scale;
-                    const worldZ = (y * scale) + zShift;
-                    const realY = y - startZ;
+                    const blockSize = 5;
+                    const bx = Math.floor(c / blockSize);
+                    const bz = Math.floor(r / blockSize);
+                    const blockSeed = Math.abs(Math.sin(bx * 12.9898 + bz * 78.233));
+                    const isBuilding = blockSeed > 0.65;
+                    const buildHeight = isBuilding ? (blockSeed * 300 + 50) : 0;
+                    const cityY = y - buildHeight;
 
-                    const nx = x / cols - 0.5;
-                    const ny = realY / rows;
-
-                    let h = 0;
-                    h -= (1 - Math.abs(nx * 2)) * 60;
-                    h += Math.sin(nx * 15 + ny * 10) * 35;
-                    h += Math.cos(nx * 25 + ny * 20) * 15;
-
-                    const y3d = h + 180;
-                    const camZ = -150;
-                    const dz = worldZ - camZ;
-
-                    projZ[idx] = dz;
-                    if (dz > 0) {
-                        const fov = 600;
-                        projX[idx] = width / 2 + (worldX * fov) / dz;
-                        projY[idx] = height * 0.45 + (y3d * fov) / dz;
-                    }
+                    points.push({ x, y, z, originalZ: z });
+                    forestMap.push(forestY);
+                    cityMap.push(cityY);
                 }
             }
-
-            ctx.beginPath();
-
-            for (let y = 0; y < rows; y++) {
-                let first = true;
-                for (let x = 0; x < cols; x++) {
-                    const idx = y * cols + x;
-                    if (projZ[idx] <= 0) continue;
-                    if (first) {
-                        ctx.moveTo(projX[idx], projY[idx]);
-                        first = false;
-                    } else {
-                        ctx.lineTo(projX[idx], projY[idx]);
-                    }
-                }
-            }
-
-            for (let x = 0; x < cols; x++) {
-                let first = true;
-                for (let y = 0; y < rows; y++) {
-                    const idx = y * cols + x;
-                    if (projZ[idx] <= 0) continue;
-                    if (first) {
-                        ctx.moveTo(projX[idx], projY[idx]);
-                        first = false;
-                    } else {
-                        ctx.lineTo(projX[idx], projY[idx]);
-                    }
-                }
-            }
-
-            ctx.stroke();
         };
 
-        const resize = () => {
+        const handleMouseMove = (e: MouseEvent) => {
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = e.clientX - rect.left;
+            mouse.y = e.clientY - rect.top;
+        };
+
+        const handleDeviceOrientation = (e: DeviceOrientationEvent) => {
+            if (e.gamma === null || e.beta === null) return;
+            const tiltX = Math.min(25, Math.max(-25, e.gamma));
+            const normalizedX = (tiltX + 25) / 50;
+            const tiltY = Math.min(70, Math.max(20, e.beta));
+            const normalizedY = (tiltY - 20) / 50;
+            mouse.x = normalizedX * width;
+            mouse.y = normalizedY * height;
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('deviceorientation', handleDeviceOrientation);
+
+        initGrid();
+
+        let animationFrameId: number;
+        const startTime = Date.now();
+
+        const animate = () => {
+            ctx.clearRect(0, 0, width, height);
+            const gradient = ctx.createLinearGradient(0, height, 0, height * 0.4);
+            const r = isNight ? 196 : 255;
+            const g = isNight ? 205 : 255;
+            const b = isNight ? 80 : 255;
+
+            gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.3)`);
+            gradient.addColorStop(0.33, `rgba(${r}, ${g}, ${b}, 0.3)`);
+            gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = 1;
+
+            const cx = width / 2;
+            const cy = height / 2;
+
+            const scrollZ = scrollRef.current * 5000;
+
+            const now = Date.now();
+            const elapsed = now - startTime;
+            const morphDelay = 500;
+            const morphDuration = 2500;
+            const rawMorph = Math.min(1, Math.max(0, (elapsed - morphDelay) / morphDuration));
+            const morph = rawMorph * rawMorph * (3 - 2 * rawMorph);
+
+            for (let i = 0; i < points.length; i++) {
+                const p = points[i];
+                const forestY = forestMap[i];
+                const cityY = cityMap[i];
+
+                let z = (p.originalZ + scrollZ);
+                const totalDepth = gridDepth + 200;
+                z = ((z % totalDepth) + totalDepth) % totalDepth;
+                z -= 200;
+
+                const scale = fov / (fov + z + viewDist);
+                const sx = p.x * scale + cx;
+                const sy = (p.y + camY) * scale + cy;
+
+                const dx = mouse.x - sx;
+                const dy = mouse.y - sy;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const maxDist = 350;
+
+                const effectiveForestY = floorY + (forestY - floorY) * morph;
+                const effectiveCityY = floorY + (cityY - floorY) * morph;
+
+                let targetY = effectiveForestY;
+
+                if (dist < maxDist) {
+                    const t = 1 - (dist / maxDist);
+                    const smoothT = t * t * (3 - 2 * t);
+                    const intensity = 0.15;
+                    const blendedT = smoothT * intensity;
+                    targetY = effectiveForestY * (1 - blendedT) + effectiveCityY * blendedT;
+                }
+
+                p.y += (targetY - p.y) * 0.08;
+
+                const renderX = sx;
+                const renderY = (p.y + camY) * scale + cy;
+
+                ctx.beginPath();
+
+                if (i % (cols + 1) < cols) {
+                    const nextP = points[i + 1];
+                    const nextOriginalZ = nextP.originalZ;
+                    let nextZ = (nextOriginalZ + scrollZ);
+                    nextZ = ((nextZ % totalDepth) + totalDepth) % totalDepth;
+                    nextZ -= 200;
+
+                    if (Math.abs(nextZ - z) < spacingZ * 2) {
+                        const nextScale = fov / (fov + nextZ + viewDist);
+                        ctx.moveTo(renderX, renderY);
+                        ctx.lineTo(nextP.x * nextScale + cx, (nextP.y + camY) * nextScale + cy);
+                    }
+                }
+
+                if (i < points.length - (cols + 1)) {
+                    const belowP = points[i + (cols + 1)];
+                    const belowOriginalZ = belowP.originalZ;
+                    let belowZ = (belowOriginalZ + scrollZ);
+                    belowZ = ((belowZ % totalDepth) + totalDepth) % totalDepth;
+                    belowZ -= 200;
+
+                    if (Math.abs(belowZ - z) < spacingZ * 2) {
+                        const belowScale = fov / (fov + belowZ + viewDist);
+                        ctx.moveTo(renderX, renderY);
+                        ctx.lineTo(belowP.x * belowScale + cx, (belowP.y + camY) * belowScale + cy);
+                    }
+                }
+                ctx.stroke();
+            }
+            animationFrameId = requestAnimationFrame(animate);
+        };
+
+        animate();
+
+        const handleResize = () => {
             width = window.innerWidth;
             height = window.innerHeight;
             canvas.width = width;
             canvas.height = height;
-            render(smoothProgress.get());
+            initGrid();
         };
+        window.addEventListener('resize', handleResize);
 
-        window.addEventListener('resize', resize);
-        resize();
-
-        const unsubscribe = smoothProgress.on('change', render);
         return () => {
-            window.removeEventListener('resize', resize);
-            unsubscribe();
+            window.removeEventListener('resize', handleResize);
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('deviceorientation', handleDeviceOrientation);
+            cancelAnimationFrame(animationFrameId);
         };
-    }, [isNight, smoothProgress]);
+    }, [isNight]);
 
     const maskClass = isNight
         ? 'from-[#020408] via-[#020408]/90 to-transparent'
@@ -398,7 +490,7 @@ export const Manifesto: React.FC<ManifestoProps> = ({ isNight }) => {
             </div>
 
             <div className="sticky top-0 h-[var(--app-vh)] overflow-hidden z-10">
-                <TerrainCanvas isNight={isNight} progress={smoothProgress} />
+                <GridCanvas isNight={isNight} progress={smoothProgress} />
 
                 <Hero isNight={isNight} opacity={heroOpacity} y={heroY} />
 
