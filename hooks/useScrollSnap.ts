@@ -137,11 +137,13 @@ export const useScrollSnap = ({ isMenuOpen, isCartOpen, isArticleOpen }: UseScro
         window.addEventListener('orientationchange', onResize);
         const visualViewport = window.visualViewport;
         visualViewport?.addEventListener('resize', onResize);
+        visualViewport?.addEventListener('scroll', onResize);
 
         return () => {
             window.removeEventListener('resize', onResize);
             window.removeEventListener('orientationchange', onResize);
             visualViewport?.removeEventListener('resize', onResize);
+            visualViewport?.removeEventListener('scroll', onResize);
             if (rafId !== null) cancelAnimationFrame(rafId);
             if (unlockSnapRafId !== null) cancelAnimationFrame(unlockSnapRafId);
         };

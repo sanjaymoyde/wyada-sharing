@@ -108,10 +108,8 @@ const GridCanvas: React.FC<{ isNight: boolean; progress: MotionValue<number> }> 
 
         let animationFrameId: number;
         const startTime = Date.now();
-        let isVisible = true;
 
         const animate = () => {
-            if (!isVisible) return;
             ctx.clearRect(0, 0, width, height);
             const gradient = ctx.createLinearGradient(0, height, 0, height * 0.4);
             const r = isNight ? 196 : 255;
@@ -208,19 +206,7 @@ const GridCanvas: React.FC<{ isNight: boolean; progress: MotionValue<number> }> 
             animationFrameId = requestAnimationFrame(animate);
         };
 
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                isVisible = entry.isIntersecting;
-                if (isVisible) {
-                    if (animationFrameId) cancelAnimationFrame(animationFrameId);
-                    animationFrameId = requestAnimationFrame(animate);
-                } else {
-                    if (animationFrameId) cancelAnimationFrame(animationFrameId);
-                }
-            },
-            { threshold: 0 }
-        );
-        if (canvas) observer.observe(canvas);
+        animate();
 
         const handleResize = () => {
             width = window.innerWidth;
@@ -232,8 +218,6 @@ const GridCanvas: React.FC<{ isNight: boolean; progress: MotionValue<number> }> 
         window.addEventListener('resize', handleResize);
 
         return () => {
-            if (canvas) observer.unobserve(canvas);
-            observer.disconnect();
             window.removeEventListener('resize', handleResize);
             window.removeEventListener('mousemove', handleMouseMove);
             window.removeEventListener('deviceorientation', handleDeviceOrientation);
