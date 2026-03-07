@@ -7,6 +7,11 @@
   --app-vh: 100vh;
 }
 
+/* prevent rubber-band overscroll from altering scroll position on iOS/Android */
+html, body {
+  overscroll-behavior-y: contain;
+}
+
 @supports (height: 100dvh) {
   :root {
     --app-vh: 100dvh;

@@ -3,6 +3,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, useMotionValueEvent, useScroll, useTransform } from 'framer-motion';
 import { LOGO_URL, ELEMENT_ICONS } from '../constants';
+import { getAppViewportHeight } from '../utils/viewport';
 
 interface CircleIntroProps {
     setLogoHidden: (hidden: boolean) => void;
@@ -11,16 +12,24 @@ interface CircleIntroProps {
 export const CircleIntro: React.FC<CircleIntroProps> = ({ setLogoHidden }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const { scrollY } = useScroll();
-    const [vh, setVh] = useState(typeof window !== 'undefined' ? window.innerHeight : 0);
+    const [vh, setVh] = useState(() => (typeof window !== 'undefined' ? getAppViewportHeight() : 0));
     const [imgError, setImgError] = useState(false);
     const lastHiddenState = useRef<boolean | null>(null);
     const [isProxyActive, setProxyActive] = useState(false);
 
     useEffect(() => {
-        const updateVh = () => setVh(window.innerHeight);
+        const updateVh = () => setVh(getAppViewportHeight());
         updateVh();
         window.addEventListener('resize', updateVh);
-        return () => window.removeEventListener('resize', updateVh);
+        window.addEventListener('orientationchange', updateVh);
+        window.visualViewport?.addEventListener('resize', updateVh);
+        window.addEventListener('scroll', updateVh, { passive: true });
+        return () => {
+            window.removeEventListener('resize', updateVh);
+            window.removeEventListener('orientationchange', updateVh);
+            window.visualViewport?.removeEventListener('resize', updateVh);
+            window.removeEventListener('scroll', updateVh);
+        };
     }, []);
 
     // --- SCROLL LOGIC ---
@@ -55,9 +64,11 @@ export const CircleIntro: React.FC<CircleIntroProps> = ({ setLogoHidden }) => {
         <section
             id="section-circle"
             ref={containerRef}
-            className="relative h-[200vh] w-full -mt-[100vh] z-[70]"
+            className="relative w-full z-[70] -mt-[5px]"
+            style={{ height: 'calc(var(--app-vh) * 2)', marginTop: 'calc(var(--app-vh) * -1 - 5px)' }}
         >
-            <div className="sticky top-0 h-[100dvh] w-full bg-[#9fc1c0] overflow-hidden shadow-[0_-50px_50px_rgba(0,0,0,0.2)] flex flex-col items-center justify-start snap-start snap-always">
+<div className="sticky top-0 w-full bg-[#9fc1c0] overflow-hidden shadow-[0_-50px_50px_rgba(0,0,0,0.2)] flex flex-col items-center justify-start snap-start snap-always"
+                    style={{ height: 'var(--app-vh)' }}>
 
                 {createPortal(
                     isProxyActive && (
@@ -128,6 +139,8 @@ export const CircleIntro: React.FC<CircleIntroProps> = ({ setLogoHidden }) => {
                     </div>
                 </div>
             </div>
+            {/* bottom mask to hide seam */}
+            <div className="absolute bottom-0 left-0 w-full h-12 pointer-events-none" style={{ background: 'linear-gradient(0deg, #9fc1c0, transparent)' }} />
         </section>
     );
 };

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, useMotionValueEvent, useScroll, useTransform } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { LOGO_URL, ELEMENT_ICONS } from '../constants';
+import { getAppViewportHeight } from '../utils/viewport';
 
 interface ElementsIntroProps {
     setLogoHidden: (hidden: boolean) => void;
@@ -12,7 +13,7 @@ interface ElementsIntroProps {
 export const ElementsIntro: React.FC<ElementsIntroProps> = ({ setLogoHidden, products = [] }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const { scrollY } = useScroll();
-    const [vh, setVh] = useState(typeof window !== 'undefined' ? window.innerHeight : 0);
+    const [vh, setVh] = useState(() => (typeof window !== 'undefined' ? getAppViewportHeight() : 0));
     const [imgError, setImgError] = useState(false);
     const lastHiddenState = useRef<boolean | null>(null);
     const [isProxyActive, setProxyActive] = useState(false);
@@ -21,10 +22,18 @@ export const ElementsIntro: React.FC<ElementsIntroProps> = ({ setLogoHidden, pro
     const defaultDesc = "Start where your body meets the world. A <span class=\"font-extrabold\">personal care</span> system inspired by the 5 fundamental forces of nature.";
 
     useEffect(() => {
-        const updateVh = () => setVh(window.innerHeight);
+        const updateVh = () => setVh(getAppViewportHeight());
         updateVh();
         window.addEventListener('resize', updateVh);
-        return () => window.removeEventListener('resize', updateVh);
+        window.addEventListener('orientationchange', updateVh);
+        window.visualViewport?.addEventListener('resize', updateVh);
+        window.addEventListener('scroll', updateVh, { passive: true });
+        return () => {
+            window.removeEventListener('resize', updateVh);
+            window.removeEventListener('orientationchange', updateVh);
+            window.visualViewport?.removeEventListener('resize', updateVh);
+            window.removeEventListener('scroll', updateVh);
+        };
     }, []);
 
     // Set initial description
@@ -75,7 +84,7 @@ export const ElementsIntro: React.FC<ElementsIntroProps> = ({ setLogoHidden, pro
         else if (name === 'Water') screenIndex = 9.0; // Starts at 9.0
         else screenIndex = 10.0; // Future starts at 10.0
 
-        const vhVal = window.innerHeight;
+        const vhVal = getAppViewportHeight();
         window.scrollTo({ top: (screenIndex * vhVal), behavior: 'smooth' });
     };
 

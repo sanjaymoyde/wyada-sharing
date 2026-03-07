@@ -2,6 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
+import { initAppViewport } from './utils/viewport';
+
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -33,3 +35,9 @@ const bootReveal = async () => {
 };
 
 void bootReveal();
+
+// initialize viewport height variable on startup and keep it in sync as the
+// mobile browser chrome shows/hides.  this is intentionally light-weight and
+// runs outside React so we can update the CSS variable globally.
+initAppViewport();
+

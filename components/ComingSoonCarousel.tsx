@@ -18,8 +18,8 @@ export const ComingSoonCarousel: React.FC<ComingSoonCarouselProps> = ({ isNight 
   return (
     <section
       id="element-future"
-      className="relative w-full z-[60]"
-      style={{ height: 'calc(var(--app-vh) * 2)', marginTop: 'calc(var(--app-vh) * -1)' }}
+      className="relative w-full z-[60] -mt-[5px]"
+      style={{ height: 'calc(var(--app-vh) * 2)', marginTop: 'calc(var(--app-vh) * -1 - 5px)' }}
     >
       <motion.div
         style={{ height: 'var(--app-vh)' }}
@@ -102,6 +102,8 @@ export const ComingSoonCarousel: React.FC<ComingSoonCarouselProps> = ({ isNight 
             </div>
           </motion.div>
         </div>
+        {/* bottom mask to hide minor gap during viewport resizing */}
+        <div className="absolute bottom-0 left-0 w-full h-12 pointer-events-none" style={{ background: 'linear-gradient(0deg, #111827, transparent)' }} />
       </motion.div>
     </section>
   );
