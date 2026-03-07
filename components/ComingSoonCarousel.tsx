@@ -18,12 +18,12 @@ export const ComingSoonCarousel: React.FC<ComingSoonCarouselProps> = ({ isNight 
   return (
     <section
       id="element-future"
-      className="relative w-full snap-start snap-always z-[60]"
+      className="relative w-full z-[60]"
       style={{ height: 'calc(var(--app-vh) * 2)', marginTop: 'calc(var(--app-vh) * -1)' }}
     >
       <motion.div
         style={{ height: 'var(--app-vh)' }}
-        className={`sticky top-0 w-full ${bgColor} overflow-hidden shadow-none transition-colors duration-700 block z-50`}
+        className={`sticky top-0 w-full ${bgColor} overflow-hidden shadow-none transition-colors duration-700 block z-50 snap-start snap-always`}
       >
         {/* Inner Content Wrapper tied to stable svh */}
         <div className="w-full relative h-[var(--app-vh)] flex flex-col items-start justify-center">

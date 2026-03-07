@@ -16,8 +16,7 @@
 html {
   position: relative;
   scroll-snap-type: y mandatory;
-  scroll-behavior: smooth;
-  overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: touch;
   transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 

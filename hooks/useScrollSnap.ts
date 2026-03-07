@@ -10,8 +10,8 @@ interface UseScrollSnapProps {
 
 const MANIFESTO_SCREENS = 5;
 const TOTAL_ORIGIN_STEPS = 5;
-const VIEWPORT_DELTA_EPSILON_PX = 1;
-const VIEWPORT_REALIGN_EPSILON_PX = 1;
+const VIEWPORT_DELTA_EPSILON_PX = 30;
+const VIEWPORT_REALIGN_EPSILON_PX = 30;
 const AUTO_SCROLL_TARGET_EPSILON_PX = 10;
 const SNAP_LOCK_TIMEOUT_MS = 1000;
 
@@ -24,6 +24,7 @@ export const useScrollSnap = ({ isMenuOpen, isCartOpen, isArticleOpen }: UseScro
     const isAutoScrolling = useRef(false);
     const autoScrollTargetRef = useRef(0);
     const autoScrollTimeoutRef = useRef<number | null>(null);
+    const isUserInteracting = useRef(false);
 
     const getVh = useCallback(() => {
         if (typeof window === 'undefined') return 1;
@@ -97,7 +98,7 @@ export const useScrollSnap = ({ isMenuOpen, isCartOpen, isArticleOpen }: UseScro
         };
 
         const applyViewportHeight = () => {
-            if (isAutoScrolling.current) return;
+            if (isAutoScrolling.current || isUserInteracting.current) return;
 
             const next = getAppViewportHeight();
             if (!Number.isFinite(next) || next <= 0) return;
@@ -137,13 +138,27 @@ export const useScrollSnap = ({ isMenuOpen, isCartOpen, isArticleOpen }: UseScro
         window.addEventListener('orientationchange', onResize);
         const visualViewport = window.visualViewport;
         visualViewport?.addEventListener('resize', onResize);
-        visualViewport?.addEventListener('scroll', onResize);
+
+        const handleStart = () => {
+            isUserInteracting.current = true;
+        };
+        const handleEnd = () => {
+            isUserInteracting.current = false;
+        };
+
+        window.addEventListener('touchstart', handleStart, { passive: true });
+        window.addEventListener('touchend', handleEnd, { passive: true });
+        window.addEventListener('mousedown', handleStart, { passive: true });
+        window.addEventListener('mouseup', handleEnd, { passive: true });
 
         return () => {
             window.removeEventListener('resize', onResize);
             window.removeEventListener('orientationchange', onResize);
             visualViewport?.removeEventListener('resize', onResize);
-            visualViewport?.removeEventListener('scroll', onResize);
+            window.removeEventListener('touchstart', handleStart);
+            window.removeEventListener('touchend', handleEnd);
+            window.removeEventListener('mousedown', handleStart);
+            window.removeEventListener('mouseup', handleEnd);
             if (rafId !== null) cancelAnimationFrame(rafId);
             if (unlockSnapRafId !== null) cancelAnimationFrame(unlockSnapRafId);
         };

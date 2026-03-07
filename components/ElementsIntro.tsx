@@ -109,10 +109,10 @@ export const ElementsIntro: React.FC<ElementsIntroProps> = ({ setLogoHidden, pro
             ref={containerRef}
             // ensures this stays pinned at top while next section (Earth) slides in
             // -mt-[1px] fixes the green line gap issue by overlapping slightly
-            className="relative w-full snap-start snap-always z-[30] -mt-[1px]"
+            className="relative w-full z-[30] -mt-[1px]"
             style={{ height: 'calc(var(--app-vh) * 2)' }}
         >
-            <div className="sticky top-0 w-full bg-[#bca2d1] overflow-hidden flex flex-col items-center justify-start" style={{ height: 'var(--app-vh)' }}>
+            <div className="sticky top-0 w-full bg-[#bca2d1] overflow-hidden flex flex-col items-center justify-start snap-start snap-always" style={{ height: 'var(--app-vh)' }}>
 
                 {createPortal(
                     isProxyActive && (
@@ -231,9 +231,6 @@ export const ElementsIntro: React.FC<ElementsIntroProps> = ({ setLogoHidden, pro
                         </div>
                     </div>
                 </div>
-
-                {/* Hidden snap anchor to prevent getting "stuck" between Manifesto and Skin */}
-                <div className="absolute top-[2vh] w-full h-1 snap-center pointer-events-none opacity-0" />
 
                 <div className="absolute bottom-20 md:bottom-24 left-0 right-0 flex flex-col items-center justify-center text-white z-20 gap-2 pointer-events-none">
                     <p className="text-xs md:text-sm font-extrabold uppercase tracking-widest opacity-90 scale-90 drop-shadow-md">5 elements. 1 routine.</p>

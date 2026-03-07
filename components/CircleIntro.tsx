@@ -55,9 +55,9 @@ export const CircleIntro: React.FC<CircleIntroProps> = ({ setLogoHidden }) => {
         <section
             id="section-circle"
             ref={containerRef}
-            className="relative h-[200vh] w-full -mt-[100vh] snap-start snap-always z-[70]"
+            className="relative h-[200vh] w-full -mt-[100vh] z-[70]"
         >
-            <div className="sticky top-0 h-[100dvh] w-full bg-[#9fc1c0] overflow-hidden shadow-[0_-50px_50px_rgba(0,0,0,0.2)] flex flex-col items-center justify-start">
+            <div className="sticky top-0 h-[100dvh] w-full bg-[#9fc1c0] overflow-hidden shadow-[0_-50px_50px_rgba(0,0,0,0.2)] flex flex-col items-center justify-start snap-start snap-always">
 
                 {createPortal(
                     isProxyActive && (

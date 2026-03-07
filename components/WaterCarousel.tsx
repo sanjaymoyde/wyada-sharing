@@ -110,12 +110,12 @@ export const WaterCarousel: React.FC<WaterCarouselProps> = ({ isNight, addToCart
     return (
         <section
             id="element-water"
-            className="relative w-full snap-start snap-always z-[50]"
+            className="relative w-full z-[50]"
             style={{ height: 'calc(var(--app-vh) * 2)', marginTop: 'calc(var(--app-vh) * -1)' }}
         >
             <motion.div
                 style={{ height: 'var(--app-vh)' }}
-                className={`sticky top-0 w-full ${bgColor} overflow-hidden shadow-none transition-colors duration-700`}
+                className={`sticky top-0 w-full ${bgColor} overflow-hidden shadow-none transition-colors duration-700 snap-start snap-always`}
             >
                 {/* Inner Content Wrapper tied to stable svh */}
                 <div className="w-full relative flex flex-col" style={{ height: 'var(--app-vh)' }}>

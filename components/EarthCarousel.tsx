@@ -95,12 +95,12 @@ export const EarthCarousel: React.FC<EarthCarouselProps> = ({ isNight, addToCart
     return (
         <section
             id="element-earth"
-            className="relative w-full snap-start snap-always z-[40]"
+            className="relative w-full z-[40]"
             style={{ height: 'calc(var(--app-vh) * 2)', marginTop: 'calc(var(--app-vh) * -1)' }}
         >
             <motion.div
                 style={{ height: 'var(--app-vh)' }}
-                className={`sticky top-0 w-full ${bgColor} overflow-hidden shadow-none transition-colors duration-700 flex flex-col`}
+                className={`sticky top-0 w-full ${bgColor} overflow-hidden shadow-none transition-colors duration-700 flex flex-col snap-start snap-always`}
             >
                 <div className="h-24 md:h-20 shrink-0" />
 

@@ -203,10 +203,10 @@ export const BigPictureCarousel: React.FC<BigPictureCarouselProps> = ({ isNight,
     <>
       <section
         id="element-bigpicture"
-        className="relative w-full snap-start snap-always z-[80]"
+        className="relative w-full z-[80]"
         style={{ height: 'calc(var(--app-vh) * 2)', marginTop: 'calc(var(--app-vh) * -1)' }}
       >
-        <div className={`sticky top-0 w-full ${bgColor} overflow-hidden shadow-[0_-50px_50px_rgba(0,0,0,0.3)] transition-colors duration-700 flex flex-col-reverse md:flex-col`} style={{ height: 'var(--app-vh)' }}>
+        <div className={`sticky top-0 w-full ${bgColor} overflow-hidden shadow-[0_-50px_50px_rgba(0,0,0,0.3)] transition-colors duration-700 flex flex-col-reverse md:flex-col snap-start snap-always`} style={{ height: 'var(--app-vh)' }}>
 
           {/* TOP: CAROUSEL */}
           <div
