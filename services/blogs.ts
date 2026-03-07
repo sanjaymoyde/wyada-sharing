@@ -18,6 +18,7 @@ interface ShopifyArticle {
     image?: {
         src?: string;
     };
+    template_suffix?: string;
 }
 
 const BLOGS_ENDPOINT = buildApiUrl('/api/blogs');
@@ -51,6 +52,7 @@ const mapArticle = (article: ShopifyArticle, blogTitle: string | undefined, fall
     author: article.author,
     published_at: article.published_at,
     blog_title: blogTitle,
+    template_suffix: article.template_suffix
 });
 
 export const fetchDynamicBlogPosts = async (): Promise<BlogPost[]> => {

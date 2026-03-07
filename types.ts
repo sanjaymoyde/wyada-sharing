@@ -22,6 +22,7 @@ export interface BlogPost {
   author?: string;
   published_at?: string;
   blog_title?: string;
+  template_suffix?: string;
 }
 
 export type ProductMode = 'hydration' | 'protection' | 'balance' | 'wash' | 'mask';

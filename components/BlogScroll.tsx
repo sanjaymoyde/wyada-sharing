@@ -41,7 +41,7 @@ export const BlogScroll: React.FC<BlogScrollProps> = ({ isNight }) => {
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
 
               <div className="absolute bottom-0 p-8 w-full">
-                <span className="text-brand-lime text-xs font-bold uppercase tracking-widest mb-2 block">{post.category}</span>
+                <span className="text-brand-lime text-xs font-bold uppercase tracking-widest mb-2 block">{post.template_suffix}</span>
                 <h3 className="text-2xl md:text-3xl font-bold text-white mb-4 leading-tight">{post.title}</h3>
                 <div className="flex items-center gap-2 text-white group-hover:text-brand-lime transition-colors cursor-pointer">
                   <span className="text-sm font-medium">Read Story</span>

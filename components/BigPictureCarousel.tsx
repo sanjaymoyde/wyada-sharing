@@ -51,11 +51,9 @@ const ArticleModal: React.FC<{
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
             <div className="absolute bottom-0 left-0 p-8 md:px-16 md:py-5 text-white max-w-4xl">
-              {article.category && (
-                <span className="text-xs font-bold uppercase tracking-widest bg-white/20 backdrop-blur-md px-3 py-1 rounded-full mb-4 inline-block">
-                  {article.category}
-                </span>
-              )}
+              <span className="text-xs font-bold uppercase tracking-widest bg-white/20 backdrop-blur-md px-3 py-1 rounded-full mb-4 inline-block">
+                {article.template_suffix ? article.template_suffix : (article.category || "Article")}
+              </span>
               <h1 className="text-3xl md:text-5xl font-bold leading-tight mb-2">
                 {article.title}
               </h1>
@@ -243,9 +241,9 @@ export const BigPictureCarousel: React.FC<BigPictureCarouselProps> = ({ isNight,
                         />
                         <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500" />
                         <div className="absolute top-6 left-6">
-                          {post.category && (
+                          {post.template_suffix && (
                             <span className="bg-white/90 text-black px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-sm">
-                              {post.category}
+                              {post.template_suffix}
                             </span>
                           )}
                         </div>
