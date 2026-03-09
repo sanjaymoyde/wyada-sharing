@@ -191,7 +191,7 @@ export const ElementIndicator: React.FC<ElementIndicatorProps> = ({ active, snap
     const showChildren = snapped === 'elements' || snapped === 'earth' || snapped === 'water' || snapped === 'future';
 
     return (
-        <div className={`fixed right-6 md:right-8 top-0 h-[var(--app-vh)] z-[140] flex flex-col items-end justify-start pt-20 gap-6 pointer-events-none ${isNight ? 'text-brand-lime' : 'text-white'}`}>
+        <div data-debug-id="element-indicator" className={`fixed right-6 md:right-8 top-0 h-[var(--app-vh)] z-[140] flex flex-col items-end justify-start pt-20 gap-6 pointer-events-none ${isNight ? 'text-brand-lime' : 'text-white'}`}>
             <div className={`flex flex-col items-end pointer-events-auto transition-all duration-500 ${expanded ? 'bg-black/20 backdrop-blur-xl p-4 rounded-2xl' : ''}`}>
                 {elements.map((el, index) => {
                     const isChildVisible = !el.isChild || showChildren;

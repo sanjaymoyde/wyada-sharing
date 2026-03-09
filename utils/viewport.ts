@@ -61,60 +61,19 @@ export const setAppViewportHeight = (heightPx: number): void => {
 
 export const initAppViewport = (): void => {
     if (typeof window === 'undefined') return;
-    // overlay used to mask any gap while the viewport height is changing
-    let overlay: HTMLDivElement | null = null;
-    const ensureOverlay = () => {
-        if (overlay) return overlay;
-        const div = document.createElement('div');
-        div.style.position = 'fixed';
-        div.style.bottom = '0';
-        div.style.left = '0';
-        div.style.width = '100%';
-        div.style.height = '50px';
-        div.style.backgroundColor = '#111827';
-        div.style.zIndex = '9999';
-        div.style.pointerEvents = 'none';
-        div.style.transition = 'opacity 120ms';
-        div.style.opacity = '0';
-        document.body.appendChild(div);
-        overlay = div;
-        return div;
-    };
+    let rafId: number | null = null;
 
-    // start with a measured baseline
-    let prevHeight = getAppViewportHeight();
     const update = () => {
-        const h = getAppViewportHeight();
-        if (h === prevHeight) return;
-
-        const scrollY = window.scrollY;
-        const screenIndex = prevHeight > 0 ? Math.round(scrollY / prevHeight) : 0;
-
-        setAppViewportHeight(h);
-
-        const ol = ensureOverlay();
-        ol.style.opacity = '1';
-
-        requestAnimationFrame(() => {
-            // always snap to the nearest section boundary when height changes
-            window.scrollTo({ top: screenIndex * h, behavior: 'auto' });
-            prevHeight = h;
-
-            // extra resnap in case the toolbar animation kicks in later
-            setTimeout(() => {
-                const sy = window.scrollY;
-                const idx = Math.round(sy / h);
-                const target = idx * h;
-                if (Math.abs(sy - target) > 1) {
-                    window.scrollTo({ top: target, behavior: 'auto' });
-                }
-                ol.style.opacity = '0';
-            }, 120);
+        if (rafId !== null) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+            rafId = null;
+            setAppViewportHeight(getAppViewportHeight());
         });
     };
+
     update();
     window.addEventListener('resize', update);
     window.addEventListener('orientationchange', update);
     window.visualViewport?.addEventListener('resize', update);
-    window.addEventListener('scroll', update, { passive: true });
+    window.visualViewport?.addEventListener('scroll', update);
 };

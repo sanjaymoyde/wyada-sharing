@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, PanInfo } from 'framer-motion';
 import { ArrowRight, ChevronLeft, ChevronRight, Users, X } from 'lucide-react';
 import { BLOG_POSTS } from '../constants';
-import { fetchDynamicBlogPosts } from '../services/blogs';
+import { fetchDynamicBlogPosts, getCachedDynamicBlogPosts } from '../services/blogs';
 import { BlogPost } from '../types';
 
 interface BigPictureCarouselProps {
@@ -82,7 +82,7 @@ const ArticleModal: React.FC<{
 );
 
 export const BigPictureCarousel: React.FC<BigPictureCarouselProps> = ({ isNight, onArticleOpenChange }) => {
-  const [posts, setPosts] = useState<BlogPost[]>(BLOG_POSTS);
+  const [posts, setPosts] = useState<BlogPost[]>(() => getCachedDynamicBlogPosts() ?? BLOG_POSTS);
   const [index, setIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState<BlogPost | null>(null);
@@ -196,6 +196,10 @@ export const BigPictureCarousel: React.FC<BigPictureCarouselProps> = ({ isNight,
   const bgColor = isNight ? 'bg-black' : 'bg-[#dcdcdc]';
   const textColor = isNight ? 'text-white' : 'text-black';
   const cardBg = isNight ? 'bg-white/10 border-white/10' : 'bg-black border-none';
+  const mobileBottomStackBottom = 'calc(var(--floating-bar-h, 64px) + env(safe-area-inset-bottom) + 0.75rem)';
+  const mobileCarouselHeight = 'calc(var(--app-vh) * 0.62)';
+  const mobileCardHeight = 'calc(var(--app-vh) * 0.44)';
+  const mobileTextHeight = 'calc(var(--app-vh) * 0.38)';
 
   return (
     <>
@@ -211,6 +215,11 @@ export const BigPictureCarousel: React.FC<BigPictureCarouselProps> = ({ isNight,
           {/* TOP: CAROUSEL */}
           <div
             className="w-full md:max-w-[calc(100%-6rem)] h-[65vh] relative flex flex-col justify-start -mt-20 md:mt-0 md:pt-14 overflow-hidden pl-4 "
+            style={{
+              height: isMobile ? mobileCarouselHeight : undefined,
+              marginTop: isMobile ? 'calc(var(--app-vh) * -0.12)' : undefined,
+              paddingBottom: isMobile ? 'calc(var(--floating-bar-h, 64px) + env(safe-area-inset-bottom) + 7.5rem)' : undefined,
+            }}
             onWheel={handleWheel}
           >
             <div className="w-full overflow-visible flex items-center justify-start">
@@ -231,7 +240,10 @@ export const BigPictureCarousel: React.FC<BigPictureCarouselProps> = ({ isNight,
               >
                 {posts.map((post) => (
                   <div key={post.id} className="w-[85vw] md:w-[38vw] flex-shrink-0 flex items-center justify-center p-2">
-                    <div className={`relative w-full h-[48vh] md:h-[38vh] rounded-[2rem] overflow-hidden border flex flex-col group ${cardBg}`}>
+                    <div
+                      className={`relative w-full h-[48vh] md:h-[38vh] rounded-[2rem] overflow-hidden border flex flex-col group ${cardBg}`}
+                      style={{ height: isMobile ? mobileCardHeight : undefined }}
+                    >
                       {/* Image Container - Full Card */}
                       <div className="w-full h-full relative overflow-hidden shrink-0">
                         <img
@@ -265,7 +277,7 @@ export const BigPictureCarousel: React.FC<BigPictureCarouselProps> = ({ isNight,
             </div>
 
             {/* Navigation */}
-            <div className="w-full flex justify-center items-center gap-4 z-30 ">
+            <div className="hidden md:flex w-full justify-center items-center gap-4 z-30 ">
               <button onClick={() => index > 0 && setIndex(index - 1)} disabled={index === 0} className={`transition-opacity p-2 ${index === 0 ? 'opacity-0 pointer-events-none' : 'opacity-100'} ${textColor}`}>
                 <ChevronLeft size={24} />
               </button>
@@ -283,14 +295,47 @@ export const BigPictureCarousel: React.FC<BigPictureCarouselProps> = ({ isNight,
             <div className="hidden md:block absolute right-0 top-14 h-[38vh] w-[2px] bg-black/30 z-40" style={{ boxShadow: '-15px 0 30px rgba(0,0,0,0.3)' }}></div>
           </div>
 
-          {/* COMMUNITY STORIES Label - Mobile Only - Above Menu */}
-          <div className="md:hidden absolute bottom-20 left-0 right-0 w-full px-4 py-2 flex items-center justify-center gap-2 z-50 pointer-events-none pb-2">
-            <Users size={14} className="text-gray-400" />
-            <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Community Stories</span>
+          {/* Mobile Bottom Stack */}
+          <div
+            className="md:hidden absolute left-0 right-0 z-50 flex flex-col items-center gap-3 px-4"
+            style={{ bottom: mobileBottomStackBottom }}
+          >
+            <div className="pointer-events-none flex items-center justify-center gap-2">
+              <Users size={14} className="text-gray-400" />
+              <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Community Stories</span>
+            </div>
+            <div className="pointer-events-auto flex items-center justify-center gap-5">
+              <button
+                onClick={() => index > 0 && setIndex(index - 1)}
+                disabled={index === 0}
+                className={`transition-opacity p-2 ${index === 0 ? 'opacity-0 pointer-events-none' : 'opacity-100'} ${textColor}`}
+              >
+                <ChevronLeft size={22} />
+              </button>
+              <div className="flex gap-2">
+                {Array.from({ length: totalSlides }).map((_, i) => (
+                  <div key={i} className={`rounded-full transition-all duration-300 ${index === i ? `w-2 h-2 ${isNight ? 'bg-white' : 'bg-black'}` : `w-2 h-2 ${isNight ? 'bg-white/30' : 'bg-black/20'}`}`} />
+                ))}
+              </div>
+              <button
+                onClick={() => index < totalSlides - 1 && setIndex(index + 1)}
+                disabled={index === totalSlides - 1}
+                className={`transition-opacity p-2 ${index === totalSlides - 1 ? 'opacity-0 pointer-events-none' : 'opacity-100'} ${textColor}`}
+              >
+                <ChevronRight size={22} />
+              </button>
+            </div>
           </div>
 
           {/* BOTTOM: TEXT */}
-          <div className="shrink-0 w-full h-[41vh] text-left pl-4 pr-16 md:px-16 z-10 flex flex-col items-start justify-start pt-24 md:pt-4 relative">
+          <div
+            className="shrink-0 w-full h-[41vh] text-left pl-4 pr-16 md:px-16 z-10 flex flex-col items-start justify-start pt-24 md:pt-4 relative"
+            style={{
+              height: isMobile ? mobileTextHeight : undefined,
+              paddingTop: isMobile ? 'calc(var(--app-vh) * 0.1)' : undefined,
+              paddingBottom: isMobile ? 'calc(var(--floating-bar-h, 64px) + env(safe-area-inset-bottom) + 3.5rem)' : undefined,
+            }}
+          >
             <p className={`text-sm md:text-xl leading-relaxed ${textColor} max-w-2xl mb-2`}>
               Urban wellness is bigger than a product and a brand. So join us, as we take a step back to look at the...
             </p>

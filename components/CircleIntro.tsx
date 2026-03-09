@@ -110,7 +110,7 @@ export const CircleIntro: React.FC<CircleIntroProps> = ({ setLogoHidden }) => {
                 </div>
 
                 <div className="w-full h-full relative z-10">
-                    <div className="absolute top-0 left-0 w-full h-full px-8 md:px-16 pt-[38vh] md:pt-[35vh]">
+                    <div className="absolute top-0 left-0 w-full h-full px-8 pt-[calc(var(--app-vh)*0.38)] md:px-16 md:pt-[calc(var(--app-vh)*0.35)]">
                         {/* Text Container - Right padding on mobile to clear the circle */}
                         <div className="w-full text-left pointer-events-auto flex flex-col items-start pr-0 md:pr-[400px]">
                             <h2 className="text-4xl md:text-6xl font-bold text-white leading-none mb-2">community.</h2>
@@ -124,9 +124,10 @@ export const CircleIntro: React.FC<CircleIntroProps> = ({ setLogoHidden }) => {
                         </div>
 
                         {/* Circle Interface - Mobile: Bottom Center. Desktop: Right Side Parallel to Heading. */}
-                        <div className="absolute z-50 pointer-events-auto flex items-start
-                                        top-[65vh] left-0 right-0 justify-center
-                                        md:top-[25vh] md:right-[18vw] md:left-auto md:justify-center">
+                        <div
+                            className="absolute z-50 pointer-events-auto flex items-start left-0 right-0 justify-center md:left-auto md:right-[18vw] md:bottom-auto md:top-[calc(var(--app-vh)*0.25)] md:justify-center"
+                            style={{ bottom: 'calc(var(--floating-bar-h, 64px) + env(safe-area-inset-bottom) + 1.5rem)' }}
+                        >
                             <div className="w-48 h-48 md:w-80 md:h-80 rounded-full border border-white/30 flex flex-col items-center justify-center gap-1 relative group cursor-pointer hover:scale-105 transition-transform duration-500">
                                 <div className="absolute inset-0 rounded-full border border-white/10 scale-125 animate-pulse-slow"></div>
                                 <div className="absolute inset-0 rounded-full border border-white/5 scale-150 animate-pulse-slow" style={{ animationDelay: '0.5s' }}></div>

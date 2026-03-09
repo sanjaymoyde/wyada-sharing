@@ -513,6 +513,7 @@ export const FloatingBar: React.FC<FloatingBarProps> = ({
 
                 <motion.div
                     ref={barRef}
+                    data-debug-id="floating-bar"
                     initial={{ y: 100, opacity: 0 }}
                     animate={{
                         y: isVisible ? 0 : 100,

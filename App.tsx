@@ -4,6 +4,7 @@ import { fetchProducts } from './services/products';
 import { CartItem, Product } from './types';
 import { Home } from './pages/Home';
 import { ProductDetails } from './pages/ProductDetails';
+import { MobileDebugOverlay } from './components/MobileDebugOverlay';
 
 const App: React.FC = () => {
   const [isNight, setIsNight] = useState<boolean>(false);
@@ -316,6 +317,7 @@ const App: React.FC = () => {
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <MobileDebugOverlay />
     </BrowserRouter>
   );
 };

@@ -365,7 +365,7 @@ export const ProductPage: React.FC<ProductPageProps> = ({ productType, onClose, 
             </div>
 
             {/* FLOATING FOOTER (Liquid Glass) */}
-            <div className="absolute bottom-6 left-0 right-0 flex justify-center z-40 pointer-events-none">
+            <div data-debug-id="product-footer" className="absolute bottom-6 left-0 right-0 flex justify-center z-40 pointer-events-none">
                 <motion.div
                     initial={{ y: 100, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
