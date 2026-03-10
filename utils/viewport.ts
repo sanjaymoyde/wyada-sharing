@@ -1,5 +1,20 @@
 type ViewportMode = 'dynamic' | 'stable';
 
+const isIOSDevice = (): boolean => {
+    if (typeof navigator === 'undefined') return false;
+    const ua = navigator.userAgent || '';
+    const platform = navigator.platform || '';
+    const isIPhoneIPadIPod = /iP(hone|ad|od)/i.test(ua);
+    const isIPadOSDesktopUA = platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+    return isIPhoneIPadIPod || isIPadOSDesktopUA;
+};
+
+const shouldPreferStableViewport = (): boolean => {
+    // iOS browser chrome (top/bottom bars) expands/collapses during scroll.
+    // For full-screen snap layouts this causes visible jumps with dynamic units.
+    return isIOSDevice();
+};
+
 const ensureViewportReference = (): HTMLDivElement | null => {
     if (typeof document === 'undefined' || !document.body) return null;
 
@@ -43,7 +58,7 @@ const readReferenceHeight = (reference: HTMLDivElement, candidates: string[]): n
 
 const resolveViewportMode = (mode?: ViewportMode): ViewportMode => {
     if (mode) return mode;
-    return 'dynamic';
+    return shouldPreferStableViewport() ? 'stable' : 'dynamic';
 };
 
 export const getAppViewportHeight = (options?: { mode?: ViewportMode }): number => {
@@ -83,19 +98,24 @@ export const setAppViewportHeight = (heightPx: number): void => {
 export const initAppViewport = (): void => {
     if (typeof window === 'undefined') return;
 
+    const mode: ViewportMode = shouldPreferStableViewport() ? 'stable' : 'dynamic';
+
     // Modern browsers (Chrome/Firefox/Edge, newer Safari) support `dvh` reliably.
     // In that case we keep `--app-vh` as a CSS unit (set in `index.css`) and avoid
     // overriding it with a JS pixel value, which can introduce scroll-snap jitter.
-    if (supportsHeight('100dvh')) return;
+    if (mode !== 'stable' && supportsHeight('100dvh')) return;
 
     let rafId: number | null = null;
-    const mode: ViewportMode = 'dynamic';
+    let lastAppliedHeight = 0;
 
     const update = () => {
         if (rafId !== null) cancelAnimationFrame(rafId);
         rafId = requestAnimationFrame(() => {
             rafId = null;
-            setAppViewportHeight(getAppViewportHeight({ mode }));
+            const next = getAppViewportHeight({ mode });
+            if (Math.abs(next - lastAppliedHeight) < 1) return;
+            lastAppliedHeight = next;
+            setAppViewportHeight(next);
         });
     };
 
@@ -103,5 +123,7 @@ export const initAppViewport = (): void => {
     window.addEventListener('resize', update);
     window.addEventListener('orientationchange', update);
     window.visualViewport?.addEventListener('resize', update);
-    window.visualViewport?.addEventListener('scroll', update);
+    if (mode === 'dynamic') {
+        window.visualViewport?.addEventListener('scroll', update);
+    }
 };

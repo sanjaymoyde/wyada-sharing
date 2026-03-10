@@ -10,10 +10,12 @@ interface UseScrollSnapProps {
 
 const MANIFESTO_SCREENS = 5;
 const TOTAL_ORIGIN_STEPS = 5;
+const MANIFESTO_DESKTOP_BOUNDARY_INDEX = 4.8;
 const VIEWPORT_DELTA_EPSILON_PX = 30;
 const VIEWPORT_REALIGN_EPSILON_PX = 30;
 const AUTO_SCROLL_TARGET_EPSILON_PX = 10;
 const SNAP_LOCK_TIMEOUT_MS = 1000;
+const DESKTOP_WHEEL_LOCK_MS = 420;
 
 export const useScrollSnap = ({ isMenuOpen, isCartOpen, isArticleOpen }: UseScrollSnapProps) => {
     const [activeElement, setActiveElement] = useState<HomeElement | null>('origin');
@@ -25,6 +27,7 @@ export const useScrollSnap = ({ isMenuOpen, isCartOpen, isArticleOpen }: UseScro
     const autoScrollTargetRef = useRef(0);
     const autoScrollTimeoutRef = useRef<number | null>(null);
     const isUserInteracting = useRef(false);
+    const desktopWheelLockUntilRef = useRef(0);
 
     const getVh = useCallback(() => {
         if (typeof window === 'undefined') return 1;
@@ -164,6 +167,68 @@ export const useScrollSnap = ({ isMenuOpen, isCartOpen, isArticleOpen }: UseScro
             if (unlockSnapRafId !== null) cancelAnimationFrame(unlockSnapRafId);
         };
     }, [applyViewportHeight, setSnapLocked]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        const onWheel = (event: WheelEvent) => {
+            if (isMenuOpen || isCartOpen || isArticleOpen) return;
+            if (isAutoScrolling.current) {
+                event.preventDefault();
+                return;
+            }
+
+            const isTouchDevice = typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0;
+            const isDesktopLike = !isTouchDevice && window.innerWidth >= 1024;
+            if (!isDesktopLike) return;
+
+            const absX = Math.abs(event.deltaX);
+            const absY = Math.abs(event.deltaY);
+            const isVerticalIntent = absY > absX * 1.1 && absY > 1;
+            if (!isVerticalIntent) return;
+
+            applyViewportHeight(false);
+
+            const screenIndex = window.scrollY / getVh();
+            if (screenIndex < MANIFESTO_DESKTOP_BOUNDARY_INDEX) {
+                // Manifesto has its own wheel choreography; do not interfere.
+                return;
+            }
+
+            const now = Date.now();
+            if (now < desktopWheelLockUntilRef.current) {
+                event.preventDefault();
+                return;
+            }
+
+            event.preventDefault();
+
+            const direction = event.deltaY > 0 ? 1 : -1;
+            const baseIndex = direction > 0
+                ? Math.floor(screenIndex + 0.05)
+                : Math.ceil(screenIndex - 0.05);
+
+            const maxIndex = Math.max(0, Math.round((document.documentElement.scrollHeight - window.innerHeight) / getVh()));
+            const targetIndex = Math.max(0, Math.min(baseIndex + direction, maxIndex));
+            const targetScrollY = targetIndex * getVh();
+
+            desktopWheelLockUntilRef.current = now + DESKTOP_WHEEL_LOCK_MS;
+
+            autoScrollTargetRef.current = targetScrollY;
+            isAutoScrolling.current = true;
+            setSnapLocked(true);
+
+            clearAutoScrollTimer();
+            autoScrollTimeoutRef.current = window.setTimeout(() => {
+                unlockSnap();
+            }, SNAP_LOCK_TIMEOUT_MS);
+
+            window.scrollTo({ top: targetScrollY, behavior: 'smooth' });
+        };
+
+        window.addEventListener('wheel', onWheel, { passive: false });
+        return () => window.removeEventListener('wheel', onWheel);
+    }, [applyViewportHeight, clearAutoScrollTimer, getVh, isArticleOpen, isCartOpen, isMenuOpen, setSnapLocked, unlockSnap]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
