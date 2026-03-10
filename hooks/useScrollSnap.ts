@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { HomeElement } from '../constants';
-import { getAppViewportHeight, setAppViewportHeight } from '../utils/viewport';
+import { getAppViewportHeight } from '../utils/viewport';
 
 interface UseScrollSnapProps {
     isMenuOpen: boolean;
@@ -83,36 +83,35 @@ export const useScrollSnap = ({ isMenuOpen, isCartOpen, isArticleOpen }: UseScro
         return 'origin';
     }, []);
 
-    const applyViewportHeight = useCallback(() => {
-        if (isAutoScrolling.current || isUserInteracting.current) return;
+    const applyViewportHeight = useCallback((allowRealign: boolean) => {
+        if (isAutoScrolling.current) return;
         const next = getAppViewportHeight();
         if (!Number.isFinite(next) || next <= 0) return;
 
         const prev = Math.max(viewportHeightRef.current, 1);
         const hasPreviousViewport = prev > 1;
         const currentScrollY = window.scrollY;
-        const shouldRealign = hasPreviousViewport && Math.abs(next - prev) >= VIEWPORT_DELTA_EPSILON_PX;
+        const shouldRealign = allowRealign && !isUserInteracting.current && hasPreviousViewport && Math.abs(next - prev) >= VIEWPORT_DELTA_EPSILON_PX;
 
-        if (!hasPreviousViewport || shouldRealign) {
+        // Always keep the ref updated so scrollIndex math stays consistent.
+        viewportHeightRef.current = next;
+
+        if (!hasPreviousViewport) {
             // when viewport changes, compute our current logical screen index
-            const screenIndex = hasPreviousViewport ? (currentScrollY / prev) : 0;
-            viewportHeightRef.current = next;
-            setAppViewportHeight(next);
-
-            if (shouldRealign) {
-                // round to nearest full-screen boundary; this prevents fractional offsets that
-                // would require a second swipe to cross after a height change.
-                const roundedIndex = Math.round(screenIndex);
-                const targetScrollY = Math.max(0, roundedIndex * next);
-                if (Math.abs(targetScrollY - currentScrollY) >= VIEWPORT_REALIGN_EPSILON_PX) {
-                    setSnapLocked(true);
-                    window.scrollTo({ top: targetScrollY, behavior: 'auto' });
-                    requestAnimationFrame(() => setSnapLocked(false));
-                }
-            }
             return;
         }
-        setAppViewportHeight(next);
+
+        if (shouldRealign) {
+            // Only realign for explicit resizes (e.g. rotation), not during normal touch scroll.
+            const screenIndex = currentScrollY / prev;
+            const roundedIndex = Math.round(screenIndex);
+            const targetScrollY = Math.max(0, roundedIndex * next);
+            if (Math.abs(targetScrollY - currentScrollY) >= VIEWPORT_REALIGN_EPSILON_PX) {
+                setSnapLocked(true);
+                window.scrollTo({ top: targetScrollY, behavior: 'auto' });
+                requestAnimationFrame(() => setSnapLocked(false));
+            }
+        }
     }, [setSnapLocked]);
 
     useEffect(() => {
@@ -131,10 +130,10 @@ export const useScrollSnap = ({ isMenuOpen, isCartOpen, isArticleOpen }: UseScro
 
         const onResize = () => {
             if (rafId !== null) cancelAnimationFrame(rafId);
-            rafId = requestAnimationFrame(applyViewportHeight);
+            rafId = requestAnimationFrame(() => applyViewportHeight(true));
         };
 
-        applyViewportHeight();
+        applyViewportHeight(true);
 
         window.addEventListener('resize', onResize);
         window.addEventListener('orientationchange', onResize);
@@ -171,7 +170,7 @@ export const useScrollSnap = ({ isMenuOpen, isCartOpen, isArticleOpen }: UseScro
 
         const handleScroll = () => {
             // ensure viewport height is up-to-date before computing any indices
-            applyViewportHeight();
+            applyViewportHeight(false);
             const scrollY = window.scrollY;
             const screenIndex = scrollY / getVh();
 
@@ -189,7 +188,7 @@ export const useScrollSnap = ({ isMenuOpen, isCartOpen, isArticleOpen }: UseScro
         };
 
         const handleScrollEnd = () => {
-            applyViewportHeight();
+            applyViewportHeight(false);
             const screenIndex = window.scrollY / getVh();
 
             if (isAutoScrolling.current) {
@@ -227,7 +226,7 @@ export const useScrollSnap = ({ isMenuOpen, isCartOpen, isArticleOpen }: UseScro
             }
             if (scrollEndTimer !== null) window.clearTimeout(scrollEndTimer);
         };
-    }, [getElementAtScroll, getVh, unlockSnap]);
+    }, [applyViewportHeight, getElementAtScroll, getVh, unlockSnap]);
 
     useEffect(() => {
         return () => {

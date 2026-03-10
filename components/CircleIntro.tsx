@@ -23,12 +23,10 @@ export const CircleIntro: React.FC<CircleIntroProps> = ({ setLogoHidden }) => {
         window.addEventListener('resize', updateVh);
         window.addEventListener('orientationchange', updateVh);
         window.visualViewport?.addEventListener('resize', updateVh);
-        window.addEventListener('scroll', updateVh, { passive: true });
         return () => {
             window.removeEventListener('resize', updateVh);
             window.removeEventListener('orientationchange', updateVh);
             window.visualViewport?.removeEventListener('resize', updateVh);
-            window.removeEventListener('scroll', updateVh);
         };
     }, []);
 

@@ -1,3 +1,5 @@
+type ViewportMode = 'dynamic' | 'stable';
+
 const ensureViewportReference = (): HTMLDivElement | null => {
     if (typeof document === 'undefined' || !document.body) return null;
 
@@ -17,34 +19,53 @@ const ensureViewportReference = (): HTMLDivElement | null => {
     return div;
 };
 
-const readReferenceHeight = (reference: HTMLDivElement): number => {
-    reference.style.height = '100dvh';
-    let measured = reference.getBoundingClientRect().height;
-
-    if (!Number.isFinite(measured) || measured <= 0) {
-        reference.style.height = '100svh';
-        measured = reference.getBoundingClientRect().height;
+const supportsHeight = (value: string): boolean => {
+    try {
+        return typeof CSS !== 'undefined' && typeof CSS.supports === 'function' && CSS.supports('height', value);
+    } catch {
+        return false;
     }
-
-    if (!Number.isFinite(measured) || measured <= 0) {
-        reference.style.height = '100vh';
-        measured = reference.getBoundingClientRect().height;
-    }
-
-    return measured;
 };
 
-export const getAppViewportHeight = (): number => {
+const readReferenceHeight = (reference: HTMLDivElement, candidates: string[]): number => {
+    for (const candidate of candidates) {
+        if (!supportsHeight(candidate)) continue;
+        reference.style.height = candidate;
+        const measured = reference.getBoundingClientRect().height;
+        if (Number.isFinite(measured) && measured > 0) return measured;
+    }
+
+    // Last-chance fallback: try a legacy value even if CSS.supports is missing/lying.
+    reference.style.height = '100vh';
+    const measured = reference.getBoundingClientRect().height;
+    return Number.isFinite(measured) ? measured : 0;
+};
+
+const resolveViewportMode = (mode?: ViewportMode): ViewportMode => {
+    if (mode) return mode;
+    return 'dynamic';
+};
+
+export const getAppViewportHeight = (options?: { mode?: ViewportMode }): number => {
     if (typeof window === 'undefined') return 1;
 
-    const visualViewportHeight = window.visualViewport?.height;
-    if (typeof visualViewportHeight === 'number' && Number.isFinite(visualViewportHeight) && visualViewportHeight > 0) {
-        return Math.max(Math.round(visualViewportHeight), 1);
+    const mode = resolveViewportMode(options?.mode);
+
+    if (mode === 'dynamic') {
+        const visualViewportHeight = window.visualViewport?.height;
+        if (typeof visualViewportHeight === 'number' && Number.isFinite(visualViewportHeight) && visualViewportHeight > 0) {
+            return Math.max(Math.round(visualViewportHeight), 1);
+        }
     }
 
     const reference = ensureViewportReference();
     if (reference) {
-        const measured = readReferenceHeight(reference);
+        const measured = readReferenceHeight(
+            reference,
+            mode === 'stable'
+                ? ['100svh', '100vh', '100dvh']
+                : ['100dvh', '100svh', '100vh']
+        );
         if (Number.isFinite(measured) && measured > 0) {
             return Math.max(Math.round(measured), 1);
         }
@@ -61,13 +82,20 @@ export const setAppViewportHeight = (heightPx: number): void => {
 
 export const initAppViewport = (): void => {
     if (typeof window === 'undefined') return;
+
+    // Modern browsers (Chrome/Firefox/Edge, newer Safari) support `dvh` reliably.
+    // In that case we keep `--app-vh` as a CSS unit (set in `index.css`) and avoid
+    // overriding it with a JS pixel value, which can introduce scroll-snap jitter.
+    if (supportsHeight('100dvh')) return;
+
     let rafId: number | null = null;
+    const mode: ViewportMode = 'dynamic';
 
     const update = () => {
         if (rafId !== null) cancelAnimationFrame(rafId);
         rafId = requestAnimationFrame(() => {
             rafId = null;
-            setAppViewportHeight(getAppViewportHeight());
+            setAppViewportHeight(getAppViewportHeight({ mode }));
         });
     };
 
