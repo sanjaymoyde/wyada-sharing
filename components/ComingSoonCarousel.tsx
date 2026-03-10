@@ -18,8 +18,8 @@ export const ComingSoonCarousel: React.FC<ComingSoonCarouselProps> = ({ isNight 
   return (
     <section
       id="element-future"
-      className="relative w-full z-[60] -mt-[5px]"
-      style={{ height: 'calc(var(--app-vh) * 2)', marginTop: 'calc(var(--app-vh) * -1 - 5px)' }}
+      className="relative w-full z-[60]"
+      style={{ height: 'calc(var(--app-vh) * 2)', marginTop: 'calc(var(--app-vh) * -1)' }}
     >
       <motion.div
         style={{ height: 'var(--app-vh)' }}
