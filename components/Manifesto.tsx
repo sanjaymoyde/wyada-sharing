@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { motion, MotionValue, Variants, useScroll, useSpring, useTransform, useMotionValueEvent } from 'framer-motion';
+import { motion, MotionValue, Variants, useScroll, useSpring, useTransform, useMotionValueEvent, animate } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 
 interface ManifestoProps {
@@ -436,6 +436,24 @@ export const Manifesto: React.FC<ManifestoProps> = ({ isNight }) => {
         let lastWheelTime = 0;
         let scrollAccumulator = 0;
 
+        const scrollToFast = (targetY: number, customDuration: number = 0.5) => {
+            // Instantly kill native scroll momentum on mobile so there's no stutter/delay
+            document.documentElement.style.overflow = 'hidden';
+
+            const startY = window.scrollY;
+
+            animate(startY, targetY, {
+                duration: customDuration,
+                ease: [0.33, 1, 0.68, 1], // snappy easing
+                onUpdate: (latest) => window.scrollTo(0, latest),
+                onComplete: () => {
+                    document.documentElement.style.overflow = '';
+                    isNavigating = false;
+                    scrollAccumulator = 0;
+                }
+            });
+        };
+
         const handleWheel = (e: WheelEvent) => {
             const container = containerRef.current;
             if (!container) return;
@@ -457,22 +475,80 @@ export const Manifesto: React.FC<ManifestoProps> = ({ isNight }) => {
                 if (scrollAccumulator > 650 && rect.bottom > window.innerHeight + 10) {
                     e.preventDefault();
                     isNavigating = true;
-                    window.scrollTo({ top: window.scrollY + rect.bottom - window.innerHeight, behavior: 'smooth' });
-                    setTimeout(() => { isNavigating = false; scrollAccumulator = 0; }, 800);
+                    scrollToFast(window.scrollY + rect.bottom - window.innerHeight);
                 } else if (scrollAccumulator < -650 && rect.top < -10) {
                     e.preventDefault();
                     isNavigating = true;
-                    window.scrollTo({ top: window.scrollY + rect.top, behavior: 'smooth' });
-                    setTimeout(() => { isNavigating = false; scrollAccumulator = 0; }, 800);
+                    scrollToFast(window.scrollY + rect.top);
+                }
+            }
+        };
+
+        // --- Touch Logic (Mobile) ---
+        let touchStartY = 0;
+        let touchStartTime = 0;
+
+        const handleTouchStart = (e: TouchEvent) => {
+            touchStartY = e.touches[0].clientY;
+            touchStartTime = Date.now();
+        };
+
+        const handleTouchEnd = (e: TouchEvent) => {
+            const container = containerRef.current;
+            if (!container) return;
+
+            const rect = container.getBoundingClientRect();
+            if (rect.top <= 10 && rect.bottom >= window.innerHeight - 10) {
+                if (isNavigating) return;
+
+                const touchEndY = e.changedTouches[0].clientY;
+                const touchEndTime = Date.now();
+                const deltaY = touchStartY - touchEndY; // positive -> swipe up -> scroll down
+                const deltaTime = Math.max(1, touchEndTime - touchStartTime);
+                const velocity = Math.abs(deltaY) / deltaTime;
+
+                // Typical swipe velocity is 0.2 - 1.2px/ms. 
+                // A strong, intentional hard flick is > 1.8px/ms
+                const isHardSwipe = velocity > 1.8 && Math.abs(deltaY) > 80;
+
+                if (isHardSwipe) {
+                    if (deltaY > 0 && rect.bottom > window.innerHeight + 10) {
+                        isNavigating = true;
+                        if (e.cancelable) e.preventDefault();
+                        scrollToFast(window.scrollY + rect.bottom - window.innerHeight);
+                    } else if (deltaY < 0 && rect.top < -10) {
+                        isNavigating = true;
+                        if (e.cancelable) e.preventDefault();
+                        scrollToFast(window.scrollY + rect.top);
+                    }
+                } else if (Math.abs(deltaY) > 30) {
+                    // NORMAL SWIPE: One swipe = one text
+                    const currentOffset = -rect.top;
+                    const vh = window.innerHeight;
+                    const currentIndex = Math.round(currentOffset / vh);
+                    
+                    let targetIndex = currentIndex + (deltaY > 0 ? 1 : -1);
+                    // clamp inside manifesto
+                    targetIndex = Math.max(0, Math.min(CONFIG.screens - 1, targetIndex));
+                    
+                    const targetScrollY = Math.round(window.scrollY + rect.top + (targetIndex * vh));
+                    
+                    isNavigating = true;
+                    if (e.cancelable) e.preventDefault();
+                    scrollToFast(targetScrollY, 0.5); // Use the same flawless logic but normal fast duration
                 }
             }
         };
 
         const wheelOptions = { passive: false } as const;
         window.addEventListener('wheel', handleWheel, wheelOptions);
+        window.addEventListener('touchstart', handleTouchStart, { passive: true });
+        window.addEventListener('touchend', handleTouchEnd, { passive: true });
 
         return () => {
             window.removeEventListener('wheel', handleWheel);
+            window.removeEventListener('touchstart', handleTouchStart);
+            window.removeEventListener('touchend', handleTouchEnd);
         };
     }, []);
 
