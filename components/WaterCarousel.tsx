@@ -118,7 +118,7 @@ export const WaterCarousel: React.FC<WaterCarouselProps> = ({ isNight, addToCart
                 className={`sticky top-0 w-full ${bgColor} overflow-hidden shadow-none transition-colors duration-700 snap-start snap-always`}
             >
                 {/* Inner Content Wrapper tied to stable svh */}
-                <div className="w-full relative flex flex-col" style={{ height: 'var(--app-vh)' }}>
+                <div className="w-full relative flex flex-col supports-[height:100svh]:!h-[100svh]" style={{ height: 'var(--app-vh)' }}>
                     <div className="h-24 md:h-20 shrink-0" />
 
                     <div className="shrink-0 text-center px-6 md:px-12 pb-4 z-10">

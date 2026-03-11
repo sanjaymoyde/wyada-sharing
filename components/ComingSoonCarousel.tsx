@@ -26,7 +26,7 @@ export const ComingSoonCarousel: React.FC<ComingSoonCarouselProps> = ({ isNight 
         className={`sticky top-0 w-full ${bgColor} overflow-hidden shadow-none transition-colors duration-700 block z-50 snap-start snap-always`}
       >
         {/* Inner Content Wrapper tied to stable svh */}
-        <div className="w-full relative h-[var(--app-vh)] flex flex-col items-start justify-center">
+        <div className="w-full relative h-[var(--app-vh)] supports-[height:100svh]:!h-[100svh] flex flex-col items-start justify-center">
           <motion.div
             className="flex h-full w-full relative"
             style={{ touchAction: "pan-y" }}

@@ -211,7 +211,6 @@ export const Home: React.FC<HomeProps> = ({
                 <ElementsIntro setLogoHidden={setHideLogo} products={allProducts} />
                 <EarthCarousel
                     isNight={isNight}
-                    progress={scrollIndex}
                     isActive={activeElement === 'earth'}
                     addToCart={() => addToCart({
                         id: 'mesa',
@@ -225,7 +224,6 @@ export const Home: React.FC<HomeProps> = ({
                 />
                 <WaterCarousel
                     isNight={isNight}
-                    progress={scrollIndex}
                     isActive={activeElement === 'water'}
                     addToCart={() => addToCart({
                         id: 'crest',

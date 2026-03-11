@@ -65,79 +65,80 @@ export const CircleIntro: React.FC<CircleIntroProps> = ({ setLogoHidden }) => {
             className="relative w-full z-[70]"
             style={{ height: 'calc(var(--app-vh) * 2)', marginTop: 'calc(var(--app-vh) * -1)' }}
         >
-<div className="sticky top-0 w-full bg-[#9fc1c0] overflow-hidden shadow-[0_-50px_50px_rgba(0,0,0,0.2)] flex flex-col items-center justify-start snap-start snap-always"
-                    style={{ height: 'var(--app-vh)' }}>
+            <motion.div className="sticky top-0 w-full bg-[#9fc1c0] overflow-hidden shadow-[0_-50px_50px_rgba(0,0,0,0.2)] flex flex-col items-center justify-start snap-start snap-always"
+                style={{ height: 'var(--app-vh)' }}>
+                <div className="w-full relative flex flex-col supports-[height:100svh]:!h-[100svh]" style={{ height: 'var(--app-vh)' }}>
 
-                {createPortal(
-                    isProxyActive && (
-                        <motion.div
-                            style={{
-                                top,
-                                scale,
-                                opacity,
-                                x: '-50%',
-                                position: 'fixed',
-                                left: '50%'
-                            }}
-                            className="z-[200] origin-top pointer-events-none flex items-center justify-center"
-                        >
-                            {!imgError ? (
-                                <img
-                                    src={LOGO_URL}
-                                    alt="way'da"
-                                    onError={(e) => {
-                                        e.currentTarget.style.display = 'none';
-                                        setImgError(true);
-                                    }}
-                                    draggable="false"
-                                    referrerPolicy="no-referrer"
-                                    className="h-12 md:h-14 w-auto object-contain select-none"
-                                />
-                            ) : (
-                                <span className="text-4xl font-bold tracking-tighter text-white">way'da</span>
-                            )}
-                        </motion.div>
-                    ),
-                    document.body
-                )}
+                    {createPortal(
+                        isProxyActive && (
+                            <motion.div
+                                style={{
+                                    top,
+                                    scale,
+                                    opacity,
+                                    x: '-50%',
+                                    position: 'fixed',
+                                    left: '50%'
+                                }}
+                                className="z-[200] origin-top pointer-events-none flex items-center justify-center"
+                            >
+                                {!imgError ? (
+                                    <img
+                                        src={LOGO_URL}
+                                        alt="way'da"
+                                        onError={(e) => {
+                                            e.currentTarget.style.display = 'none';
+                                            setImgError(true);
+                                        }}
+                                        draggable="false"
+                                        referrerPolicy="no-referrer"
+                                        className="h-12 md:h-14 w-auto object-contain select-none"
+                                    />
+                                ) : (
+                                    <span className="text-4xl font-bold tracking-tighter text-white">way'da</span>
+                                )}
+                            </motion.div>
+                        ),
+                        document.body
+                    )}
 
-                <div className="absolute top-[18%] left-1/2 -translate-x-1/2 z-30 flex justify-center pointer-events-none">
-                    <div className="text-xs font-bold tracking-[0.5em] text-white uppercase whitespace-nowrap mt-4">
-                        Circle
-                    </div>
-                </div>
-
-                <div className="w-full h-full relative z-10">
-                    <div className="absolute top-0 left-0 w-full h-full px-8 pt-[calc(var(--app-vh)*0.38)] md:px-16 md:pt-[calc(var(--app-vh)*0.35)]">
-                        {/* Text Container - Right padding on mobile to clear the circle */}
-                        <div className="w-full text-left pointer-events-auto flex flex-col items-start pr-0 md:pr-[400px]">
-                            <h2 className="text-4xl md:text-6xl font-bold text-white leading-none mb-2">community.</h2>
-                            <h3 className="text-lg md:text-2xl font-medium italic text-white/80 leading-tight mb-8">where interests find their centre.</h3>
-                            <p className="text-sm md:text-lg font-medium leading-relaxed text-white/90 max-w-lg mb-8">
-                                Step into the <span className="font-bold">CIRCLE OF WORDS, PLAY, ART, and MUSIC.</span> A shared space to disconnect from the noise and connect through culture.
-                            </p>
-                            <p className="text-[10px] md:text-xs font-bold tracking-widest text-white/60 uppercase">
-                                CURRENTLY ONLY IN INDORE, MADHYA PRADESH.
-                            </p>
+                    <div className="absolute top-[18%] left-1/2 -translate-x-1/2 z-30 flex justify-center pointer-events-none">
+                        <div className="text-xs font-bold tracking-[0.5em] text-white uppercase whitespace-nowrap mt-4">
+                            Circle
                         </div>
+                    </div>
 
-                        {/* Circle Interface - Mobile: Bottom Center. Desktop: Right Side Parallel to Heading. */}
-                        <div
-                            className="absolute z-50 pointer-events-auto flex items-start left-0 right-0 justify-center md:left-auto md:right-[18vw] md:bottom-auto md:top-[calc(var(--app-vh)*0.25)] md:justify-center"
-                            style={{ bottom: 'calc(var(--floating-bar-h, 64px) + env(safe-area-inset-bottom) + 1.5rem)' }}
-                        >
-                            <div className="w-48 h-48 md:w-80 md:h-80 rounded-full border border-white/30 flex flex-col items-center justify-center gap-1 relative group cursor-pointer hover:scale-105 transition-transform duration-500">
-                                <div className="absolute inset-0 rounded-full border border-white/10 scale-125 animate-pulse-slow"></div>
-                                <div className="absolute inset-0 rounded-full border border-white/5 scale-150 animate-pulse-slow" style={{ animationDelay: '0.5s' }}></div>
-                                <div className="w-20 h-20 md:w-40 md:h-40 relative flex items-center justify-center">
-                                    <img src={ELEMENT_ICONS.CIRCLE} alt="Circle" className="w-full h-full object-contain brightness-0 invert" referrerPolicy="no-referrer" />
+                    <div className="w-full h-full relative z-10">
+                        <div className="absolute top-0 left-0 w-full h-full px-8 pt-[calc(var(--app-vh)*0.25)] md:px-16 md:pt-[calc(var(--app-vh)*0.35)] flex flex-col md:block">
+                            {/* Text Container */}
+                            <div className="w-full text-left pointer-events-auto flex flex-col items-start pr-0 md:pr-[400px]">
+                                <h2 className="text-4xl md:text-6xl font-bold text-white leading-none mb-2">community.</h2>
+                                <h3 className="text-lg md:text-2xl font-medium italic text-white/80 leading-tight mb-4 md:mb-8">where interests find their centre.</h3>
+                                <p className="text-sm md:text-lg font-medium leading-relaxed text-white/90 max-w-lg mb-4 md:mb-8">
+                                    Step into the <span className="font-bold">CIRCLE OF WORDS, PLAY, ART, and MUSIC.</span> A shared space to disconnect from the noise and connect through culture.
+                                </p>
+                                <p className="text-[10px] md:text-xs font-bold tracking-widest text-white/60 uppercase mb-8 md:mb-0">
+                                    CURRENTLY ONLY IN INDORE, MADHYA PRADESH.
+                                </p>
+                            </div>
+
+                            {/* Circle Interface - Stacked on Mobile, Absolute on Desktop */}
+                            <div
+                                className="relative md:absolute z-50 pointer-events-auto flex items-start w-full md:w-auto justify-center md:left-auto md:right-[18vw] md:bottom-auto md:top-[calc(var(--app-vh)*0.25)] md:justify-center mt-auto mb-16 md:mt-0 md:mb-0"
+                            >
+                                <div className="w-48 h-48 md:w-80 md:h-80 rounded-full border border-white/30 flex flex-col items-center justify-center gap-1 relative group cursor-pointer hover:scale-105 transition-transform duration-500">
+                                    <div className="absolute inset-0 rounded-full border border-white/10 scale-125 animate-pulse-slow"></div>
+                                    <div className="absolute inset-0 rounded-full border border-white/5 scale-150 animate-pulse-slow" style={{ animationDelay: '0.5s' }}></div>
+                                    <div className="w-20 h-20 md:w-40 md:h-40 relative flex items-center justify-center">
+                                        <img src={ELEMENT_ICONS.CIRCLE} alt="Circle" className="w-full h-full object-contain brightness-0 invert" referrerPolicy="no-referrer" />
+                                    </div>
+                                    <span className="text-[10px] md:text-[10px] uppercase tracking-widest font-bold text-white whitespace-nowrap opacity-80 group-hover:opacity-100 transition-opacity">Join the circle.</span>
                                 </div>
-                                <span className="text-[10px] md:text-[10px] uppercase tracking-widest font-bold text-white whitespace-nowrap opacity-80 group-hover:opacity-100 transition-opacity">Join the circle.</span>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </motion.div>
             {/* bottom mask to hide seam */}
             <div className="absolute bottom-0 left-0 w-full h-12 pointer-events-none" style={{ background: 'linear-gradient(0deg, #9fc1c0, transparent)' }} />
         </section>

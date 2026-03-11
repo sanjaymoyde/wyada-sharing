@@ -208,141 +208,143 @@ export const BigPictureCarousel: React.FC<BigPictureCarouselProps> = ({ isNight,
         className="relative w-full z-[80]"
         style={{ height: 'calc(var(--app-vh) * 2)', marginTop: 'calc(var(--app-vh) * -1)' }}
       >
-        <div className={`sticky top-0 w-full ${bgColor} overflow-hidden shadow-[0_-50px_50px_rgba(0,0,0,0.3)] transition-colors duration-700 flex flex-col-reverse md:flex-col snap-start snap-always`} style={{ height: 'var(--app-vh)' }}>
-          {/* top mask to soften transition from previous section */}
-          <div className="absolute top-0 left-0 w-full h-12 pointer-events-none" style={{ background: bgColor }} />
+        <motion.div className={`sticky top-0 w-full ${bgColor} overflow-hidden shadow-[0_-50px_50px_rgba(0,0,0,0.3)] transition-colors duration-700 snap-start snap-always`} style={{ height: 'var(--app-vh)' }}>
+          <div className="w-full relative flex flex-col-reverse md:flex-col supports-[height:100svh]:!h-[100svh]" style={{ height: 'var(--app-vh)' }}>
+            {/* top mask to soften transition from previous section */}
+            <div className="absolute top-0 left-0 w-full h-12 pointer-events-none" style={{ background: bgColor }} />
 
-          {/* TOP: CAROUSEL */}
-          <div
-            className="w-full md:max-w-[calc(100%-6rem)] h-[65vh] relative flex flex-col justify-start -mt-20 md:mt-0 md:pt-14 overflow-hidden pl-4 "
-            style={{
-              height: isMobile ? mobileCarouselHeight : undefined,
-              marginTop: isMobile ? 'calc(var(--app-vh) * -0.12)' : undefined,
-              paddingBottom: isMobile ? 'calc(var(--floating-bar-h, 64px) + env(safe-area-inset-bottom) + 7.5rem)' : undefined,
-            }}
-            onWheel={handleWheel}
-          >
-            <div className="w-full overflow-visible flex items-center justify-start">
-              <motion.div
-                className="flex will-change-transform"
-                drag="x"
-                dragDirectionLock={true}
-                dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={isMobile ? 0.6 : 0.2}
-                onDragEnd={handleDragEnd}
-                animate={{
-                  x: `${isMobile
-                    ? -(Math.min(index, totalSlides - 1) * 85)
-                    : -(Math.min(index, totalSlides - 2) * 38)}vw`
-                }}
-                transition={{ type: "spring", stiffness: 300, damping: isMobile ? 35 : 30 }}
-                style={{ touchAction: "pan-y" }}
-              >
-                {posts.map((post) => (
-                  <div key={post.id} className="w-[85vw] md:w-[38vw] flex-shrink-0 flex items-center justify-center p-2">
-                    <div
-                      className={`relative w-full h-[48vh] md:h-[38vh] rounded-[2rem] overflow-hidden border flex flex-col group ${cardBg}`}
-                      style={{ height: isMobile ? mobileCardHeight : undefined }}
-                    >
-                      {/* Image Container - Full Card */}
-                      <div className="w-full h-full relative overflow-hidden shrink-0">
-                        <img
-                          src={post.image}
-                          alt={post.title}
-                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        />
-                        <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500" />
-                        <div className="absolute top-6 left-6">
-                          {post.template_suffix && (
-                            <span className="bg-white/90 text-black px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-sm">
-                              {post.template_suffix}
-                            </span>
-                          )}
-                        </div>
-                        <div className="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black/95 via-black/40 to-transparent text-white">
-                          <h3 className="text-xl md:text-2xl font-bold leading-tight mb-1 drop-shadow-md">{post.title}</h3>
-                          <button
-                            type="button"
-                            onClick={() => setSelectedArticle(post)}
-                            className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest mt-2 border-b border-white/30 hover:border-white pb-0.5 w-max"
-                          >
-                            Read Article <ArrowRight size={12} />
-                          </button>
+            {/* TOP: CAROUSEL */}
+            <div
+              className="w-full md:max-w-[calc(100%-6rem)] h-[65vh] relative flex flex-col justify-start -mt-20 md:mt-0 md:pt-14 overflow-hidden pl-4 "
+              style={{
+                height: isMobile ? mobileCarouselHeight : undefined,
+                marginTop: isMobile ? 'calc(var(--app-vh) * -0.12)' : undefined,
+                paddingBottom: isMobile ? 'calc(var(--floating-bar-h, 64px) + env(safe-area-inset-bottom) + 7.5rem)' : undefined,
+              }}
+              onWheel={handleWheel}
+            >
+              <div className="w-full overflow-visible flex items-center justify-start">
+                <motion.div
+                  className="flex will-change-transform"
+                  drag="x"
+                  dragDirectionLock={true}
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={isMobile ? 0.6 : 0.2}
+                  onDragEnd={handleDragEnd}
+                  animate={{
+                    x: `${isMobile
+                      ? -(Math.min(index, totalSlides - 1) * 85)
+                      : -(Math.min(index, totalSlides - 2) * 38)}vw`
+                  }}
+                  transition={{ type: "spring", stiffness: 300, damping: isMobile ? 35 : 30 }}
+                  style={{ touchAction: "pan-y" }}
+                >
+                  {posts.map((post) => (
+                    <div key={post.id} className="w-[85vw] md:w-[38vw] flex-shrink-0 flex items-center justify-center p-2">
+                      <div
+                        className={`relative w-full h-[48vh] md:h-[38vh] rounded-[2rem] overflow-hidden border flex flex-col group ${cardBg}`}
+                        style={{ height: isMobile ? mobileCardHeight : undefined }}
+                      >
+                        {/* Image Container - Full Card */}
+                        <div className="w-full h-full relative overflow-hidden shrink-0">
+                          <img
+                            src={post.image}
+                            alt={post.title}
+                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500" />
+                          <div className="absolute top-6 left-6">
+                            {post.template_suffix && (
+                              <span className="bg-white/90 text-black px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-sm">
+                                {post.template_suffix}
+                              </span>
+                            )}
+                          </div>
+                          <div className="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black/95 via-black/40 to-transparent text-white">
+                            <h3 className="text-xl md:text-2xl font-bold leading-tight mb-1 drop-shadow-md">{post.title}</h3>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedArticle(post)}
+                              className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest mt-2 border-b border-white/30 hover:border-white pb-0.5 w-max"
+                            >
+                              Read Article <ArrowRight size={12} />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </motion.div>
-            </div>
-
-            {/* Navigation */}
-            <div className="hidden md:flex w-full justify-center items-center gap-4 z-30 ">
-              <button onClick={() => index > 0 && setIndex(index - 1)} disabled={index === 0} className={`transition-opacity p-2 ${index === 0 ? 'opacity-0 pointer-events-none' : 'opacity-100'} ${textColor}`}>
-                <ChevronLeft size={24} />
-              </button>
-              <div className="flex gap-2">
-                {Array.from({ length: totalSlides }).map((_, i) => (
-                  <div key={i} className={`rounded-full transition-all duration-300 ${index === i ? `w-2 h-2 ${isNight ? 'bg-white' : 'bg-black'}` : `w-2 h-2 ${isNight ? 'bg-white/30' : 'bg-black/20'}`}`} />
-                ))}
+                  ))}
+                </motion.div>
               </div>
-              <button onClick={() => index < totalSlides - 1 && setIndex(index + 1)} disabled={index === totalSlides - 1} className={`transition-opacity p-2 ${index === totalSlides - 1 ? 'opacity-0 pointer-events-none' : 'opacity-100'} ${textColor}`}>
-                <ChevronRight size={24} />
-              </button>
-            </div>
 
-            {/* Vertical Divider / Shadow Overlay - Simulating 'coming from right' panel */}
-            <div className="hidden md:block absolute right-0 top-14 h-[38vh] w-[2px] bg-black/30 z-40" style={{ boxShadow: '-15px 0 30px rgba(0,0,0,0.3)' }}></div>
-          </div>
-
-          {/* Mobile Bottom Stack */}
-          <div
-            className="md:hidden absolute left-0 right-0 z-50 flex flex-col items-center gap-3 px-4"
-            style={{ bottom: mobileBottomStackBottom }}
-          >
-            <div className="pointer-events-none flex items-center justify-center gap-2">
-              <Users size={14} className="text-gray-400" />
-              <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Community Stories</span>
-            </div>
-            <div className="pointer-events-auto flex items-center justify-center gap-5">
-              <button
-                onClick={() => index > 0 && setIndex(index - 1)}
-                disabled={index === 0}
-                className={`transition-opacity p-2 ${index === 0 ? 'opacity-0 pointer-events-none' : 'opacity-100'} ${textColor}`}
-              >
-                <ChevronLeft size={22} />
-              </button>
-              <div className="flex gap-2">
-                {Array.from({ length: totalSlides }).map((_, i) => (
-                  <div key={i} className={`rounded-full transition-all duration-300 ${index === i ? `w-2 h-2 ${isNight ? 'bg-white' : 'bg-black'}` : `w-2 h-2 ${isNight ? 'bg-white/30' : 'bg-black/20'}`}`} />
-                ))}
+              {/* Navigation */}
+              <div className="hidden md:flex w-full justify-center items-center gap-4 z-30 ">
+                <button onClick={() => index > 0 && setIndex(index - 1)} disabled={index === 0} className={`transition-opacity p-2 ${index === 0 ? 'opacity-0 pointer-events-none' : 'opacity-100'} ${textColor}`}>
+                  <ChevronLeft size={24} />
+                </button>
+                <div className="flex gap-2">
+                  {Array.from({ length: totalSlides }).map((_, i) => (
+                    <div key={i} className={`rounded-full transition-all duration-300 ${index === i ? `w-2 h-2 ${isNight ? 'bg-white' : 'bg-black'}` : `w-2 h-2 ${isNight ? 'bg-white/30' : 'bg-black/20'}`}`} />
+                  ))}
+                </div>
+                <button onClick={() => index < totalSlides - 1 && setIndex(index + 1)} disabled={index === totalSlides - 1} className={`transition-opacity p-2 ${index === totalSlides - 1 ? 'opacity-0 pointer-events-none' : 'opacity-100'} ${textColor}`}>
+                  <ChevronRight size={24} />
+                </button>
               </div>
-              <button
-                onClick={() => index < totalSlides - 1 && setIndex(index + 1)}
-                disabled={index === totalSlides - 1}
-                className={`transition-opacity p-2 ${index === totalSlides - 1 ? 'opacity-0 pointer-events-none' : 'opacity-100'} ${textColor}`}
-              >
-                <ChevronRight size={22} />
-              </button>
+
+              {/* Vertical Divider / Shadow Overlay - Simulating 'coming from right' panel */}
+              <div className="hidden md:block absolute right-0 top-14 h-[38vh] w-[2px] bg-black/30 z-40" style={{ boxShadow: '-15px 0 30px rgba(0,0,0,0.3)' }}></div>
             </div>
-          </div>
 
-          {/* BOTTOM: TEXT */}
-          <div
-            className="shrink-0 w-full h-[41vh] text-left pl-4 pr-16 md:px-16 z-10 flex flex-col items-start justify-start pt-24 md:pt-4 relative"
-            style={{
-              height: isMobile ? mobileTextHeight : undefined,
-              paddingTop: isMobile ? 'calc(var(--app-vh) * 0.1)' : undefined,
-              paddingBottom: isMobile ? 'calc(var(--floating-bar-h, 64px) + env(safe-area-inset-bottom) + 3.5rem)' : undefined,
-            }}
-          >
-            <p className={`text-sm md:text-xl leading-relaxed ${textColor} max-w-2xl mb-2`}>
-              Urban wellness is bigger than a product and a brand. So join us, as we take a step back to look at the...
-            </p>
-            <h2 className={`text-4xl md:text-7xl font-black tracking-tight ${textColor} leading-none`}>big picture.</h2>
-          </div>
+            {/* Mobile Bottom Stack */}
+            <div
+              className="md:hidden absolute left-0 right-0 z-50 flex flex-col items-center gap-3 px-4"
+              style={{ bottom: mobileBottomStackBottom }}
+            >
+              <div className="pointer-events-none flex items-center justify-center gap-2">
+                <Users size={14} className="text-gray-400" />
+                <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Community Stories</span>
+              </div>
+              <div className="pointer-events-auto flex items-center justify-center gap-5">
+                <button
+                  onClick={() => index > 0 && setIndex(index - 1)}
+                  disabled={index === 0}
+                  className={`transition-opacity p-2 ${index === 0 ? 'opacity-0 pointer-events-none' : 'opacity-100'} ${textColor}`}
+                >
+                  <ChevronLeft size={22} />
+                </button>
+                <div className="flex gap-2">
+                  {Array.from({ length: totalSlides }).map((_, i) => (
+                    <div key={i} className={`rounded-full transition-all duration-300 ${index === i ? `w-2 h-2 ${isNight ? 'bg-white' : 'bg-black'}` : `w-2 h-2 ${isNight ? 'bg-white/30' : 'bg-black/20'}`}`} />
+                  ))}
+                </div>
+                <button
+                  onClick={() => index < totalSlides - 1 && setIndex(index + 1)}
+                  disabled={index === totalSlides - 1}
+                  className={`transition-opacity p-2 ${index === totalSlides - 1 ? 'opacity-0 pointer-events-none' : 'opacity-100'} ${textColor}`}
+                >
+                  <ChevronRight size={22} />
+                </button>
+              </div>
+            </div>
 
-        </div>
+            {/* BOTTOM: TEXT */}
+            <div
+              className="shrink-0 w-full h-[41vh] text-left pl-4 pr-16 md:px-16 z-10 flex flex-col items-start justify-start pt-24 md:pt-4 relative"
+              style={{
+                height: isMobile ? mobileTextHeight : undefined,
+                paddingTop: isMobile ? 'calc(var(--app-vh) * 0.1)' : undefined,
+                paddingBottom: isMobile ? 'calc(var(--floating-bar-h, 64px) + env(safe-area-inset-bottom) + 3.5rem)' : undefined,
+              }}
+            >
+              <p className={`text-sm md:text-xl leading-relaxed ${textColor} max-w-2xl mb-2`}>
+                Urban wellness is bigger than a product and a brand. So join us, as we take a step back to look at the...
+              </p>
+              <h2 className={`text-4xl md:text-7xl font-black tracking-tight ${textColor} leading-none`}>big picture.</h2>
+            </div>
+
+          </div>
+        </motion.div>
       </section>
 
       <ArticleModal article={selectedArticle} onClose={() => setSelectedArticle(null)} />

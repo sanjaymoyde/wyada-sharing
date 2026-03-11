@@ -78,7 +78,7 @@ export const getAppViewportHeight = (options?: { mode?: ViewportMode }): number 
         const measured = readReferenceHeight(
             reference,
             mode === 'stable'
-                ? ['100svh', '100vh', '100dvh']
+                ? ['100lvh', '100svh', '100vh']
                 : ['100dvh', '100svh', '100vh']
         );
         if (Number.isFinite(measured) && measured > 0) {

@@ -489,38 +489,40 @@ export const Manifesto: React.FC<ManifestoProps> = ({ isNight }) => {
                 ))}
             </div>
 
-            <div className="sticky top-0 h-[var(--app-vh)] overflow-hidden z-10">
-                <GridCanvas isNight={isNight} progress={smoothProgress} />
+            <div className="sticky top-0 h-[var(--app-vh)] overflow-hidden z-10 w-full relative">
+                <div className="w-full relative h-[var(--app-vh)] supports-[height:100svh]:!h-[100svh]">
+                    <GridCanvas isNight={isNight} progress={smoothProgress} />
 
-                <Hero isNight={isNight} opacity={heroOpacity} y={heroY} />
+                    <Hero isNight={isNight} opacity={heroOpacity} y={heroY} />
 
-                <ScrollText text="Pollution your nose can't smell." progress={smoothProgress} range={CONFIG.lineRanges.pollution} />
-                <ScrollText text="Blue light that steals your sleep." progress={smoothProgress} range={CONFIG.lineRanges.blueLight} />
-                <ScrollText text="Stress that sticks." progress={smoothProgress} range={CONFIG.lineRanges.stress} />
+                    <ScrollText text="Pollution your nose can't smell." progress={smoothProgress} range={CONFIG.lineRanges.pollution} />
+                    <ScrollText text="Blue light that steals your sleep." progress={smoothProgress} range={CONFIG.lineRanges.blueLight} />
+                    <ScrollText text="Stress that sticks." progress={smoothProgress} range={CONFIG.lineRanges.stress} />
 
-                <Outro opacity={outroOpacity} y={outroY} />
+                    <Outro opacity={outroOpacity} y={outroY} />
 
-                <motion.div
-                    style={{ opacity: scrollPromptOpacity, y: scrollPromptY }}
-                    className="absolute bottom-20 md:bottom-24 left-0 right-0 flex flex-col items-center gap-2 text-white z-30 pointer-events-none"
-                >
-                    <span className="text-xs md:text-sm uppercase tracking-[0.3em] font-bold">Scroll to adapt</span>
-                    <motion.div animate={{ y: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}>
-                        <ChevronDown className="w-5 h-5 opacity-70" />
+                    <motion.div
+                        style={{ opacity: scrollPromptOpacity, y: scrollPromptY }}
+                        className="absolute bottom-20 md:bottom-24 left-0 right-0 flex flex-col items-center gap-2 text-white z-30 pointer-events-none"
+                    >
+                        <span className="text-xs md:text-sm uppercase tracking-[0.3em] font-bold">Scroll to adapt</span>
+                        <motion.div animate={{ y: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}>
+                            <ChevronDown className="w-5 h-5 opacity-70" />
+                        </motion.div>
                     </motion.div>
-                </motion.div>
 
-                <motion.div
-                    style={{ opacity: elementsPromptOpacity }}
-                    className="absolute bottom-20 md:bottom-24 left-0 right-0 flex flex-col items-center gap-2 text-white z-30 pointer-events-none"
-                >
-                    <span className="text-xs md:text-sm font-extrabold uppercase tracking-widest opacity-90 scale-90 drop-shadow-md">
-                        MEET THE ELEMENTS
-                    </span>
-                    <motion.div animate={{ y: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}>
-                        <ChevronDown size={20} />
+                    <motion.div
+                        style={{ opacity: elementsPromptOpacity }}
+                        className="absolute bottom-20 md:bottom-24 left-0 right-0 flex flex-col items-center gap-2 text-white z-30 pointer-events-none"
+                    >
+                        <span className="text-xs md:text-sm font-extrabold uppercase tracking-widest opacity-90 scale-90 drop-shadow-md">
+                            MEET THE ELEMENTS
+                        </span>
+                        <motion.div animate={{ y: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}>
+                            <ChevronDown size={20} />
+                        </motion.div>
                     </motion.div>
-                </motion.div>
+                </div>
             </div>
         </section>
     );
