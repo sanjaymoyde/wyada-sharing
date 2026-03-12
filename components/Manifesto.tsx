@@ -532,10 +532,13 @@ export const Manifesto: React.FC<ManifestoProps> = ({ isNight }) => {
                     targetIndex = Math.max(0, Math.min(CONFIG.screens - 1, targetIndex));
                     
                     const targetScrollY = Math.round(window.scrollY + rect.top + (targetIndex * vh));
+                    // Keep normal swipes snappy; slightly faster when swipe velocity is higher.
+                    const normalSwipeSpeedFactor = Math.min(1, velocity / 1.8);
+                    const normalSwipeDuration = 0.36 - (normalSwipeSpeedFactor * 0.08);
                     
                     isNavigating = true;
                     if (e.cancelable) e.preventDefault();
-                    scrollToFast(targetScrollY, 0.5); // Use the same flawless logic but normal fast duration
+                    scrollToFast(targetScrollY, normalSwipeDuration);
                 }
             }
         };
