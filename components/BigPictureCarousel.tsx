@@ -301,7 +301,7 @@ export const BigPictureCarousel: React.FC<BigPictureCarouselProps> = ({ isNight,
               className="md:hidden absolute left-0 right-0 z-50 flex flex-col items-center gap-3 px-4"
               style={{ bottom: mobileBottomStackBottom }}
             >
-              <div className="pointer-events-none flex items-center justify-center gap-2">
+              <div className="pointer-events-none flex items-center justify-center gap-2 translate-y-1.5">
                 <Users size={14} className="text-gray-400" />
                 <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Community Stories</span>
               </div>
