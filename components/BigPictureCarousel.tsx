@@ -234,7 +234,9 @@ export const BigPictureCarousel: React.FC<BigPictureCarouselProps> = ({ isNight,
                   animate={{
                     x: `${isMobile
                       ? -(Math.min(index, totalSlides - 1) * 85)
-                      : -(Math.min(index, totalSlides - 2) * 38)}vw`
+                      : totalSlides <= 1
+                        ? 0
+                        : -(Math.min(index, totalSlides - 2) * 38)}vw`
                   }}
                   transition={{ type: "spring", stiffness: 300, damping: isMobile ? 35 : 30 }}
                   style={{ touchAction: "pan-y" }}
