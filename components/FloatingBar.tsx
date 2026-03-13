@@ -229,43 +229,39 @@ export const FloatingBar: React.FC<FloatingBarProps> = ({
     const handleCheckout = async () => {
         setIsCheckoutLoading(true);
 
-        const isMobile = window.innerWidth < 768; // Simple check for mobile logic
         let popup: Window | null = null;
 
-        // 1. Desktop: Open popup immediately (Trusted User Action) to bypass blockers
-        if (!isMobile) {
-            const width = 1000;
-            const height = 800;
-            const left = (window.screen.width - width) / 2;
-            const top = (window.screen.height - height) / 2;
+        const width = 1000;
+        const height = 800;
+        const left = Math.max(0, (window.screen.width - width) / 2);
+        const top = Math.max(0, (window.screen.height - height) / 2);
 
-            popup = window.open(
-                '',
-                'ShopifyCheckout',
-                `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
-            );
+        // Attempt popup first and fall back to same-window redirect if the browser blocks it.
+        popup = window.open(
+            '',
+            'ShopifyCheckout',
+            `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
+        );
 
-            // Styling the loading state in the popup
-            if (popup) {
-                popup.document.write(`
-                    <html>
-                        <head>
-                            <title>Securing Checkout...</title>
-                            <meta name="viewport" content="width=device-width, initial-scale=1">
-                            <style>
-                                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f9f9f9; }
-                                .loader { width: 40px; height: 40px; border: 4px solid #ddd; border-top-color: #000; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 20px; }
-                                @keyframes spin { to { transform: rotate(360deg); } }
-                                p { color: #666; font-size: 16px; font-weight: 500; }
-                            </style>
-                        </head>
-                        <body>
-                            <div class="loader"></div>
-                            <p>Connecting to secure checkout...</p>
-                        </body>
-                    </html>
-                `);
-            }
+        if (popup && !popup.closed) {
+            popup.document.write(`
+                <html>
+                    <head>
+                        <title>Securing Checkout...</title>
+                        <meta name="viewport" content="width=device-width, initial-scale=1">
+                        <style>
+                            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f9f9f9; }
+                            .loader { width: 40px; height: 40px; border: 4px solid #ddd; border-top-color: #000; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 20px; }
+                            @keyframes spin { to { transform: rotate(360deg); } }
+                            p { color: #666; font-size: 16px; font-weight: 500; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="loader"></div>
+                        <p>Connecting to secure checkout...</p>
+                    </body>
+                </html>
+            `);
         }
 
         const checkoutItems = cartItems.map(item => ({
