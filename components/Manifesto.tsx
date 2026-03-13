@@ -457,8 +457,8 @@ export const Manifesto: React.FC<ManifestoProps> = ({ isNight }) => {
     const heroOpacity = useTransform(smoothProgress, [0.0, 0.07, 0.17], [1, 1, 0]);
     const heroY = useTransform(smoothProgress, [0.0, 0.22], [0, -220]);
 
-    const outroOpacity = useTransform(smoothProgress, [0.81, 0.92, 1.0], [0, 1, 1]);
-    const outroY = useTransform(smoothProgress, [0.81, 0.92], [40, 0]);
+    const outroOpacity = useTransform(smoothProgress, [0.88, 0.95, 1.0], [0, 1, 1]);
+    const outroY = useTransform(smoothProgress, [0.88, 0.95], [40, 0]);
 
     const scrollPromptOpacity = useTransform(smoothProgress, [0.0, 0.80, 0.90], [1, 1, 0]);
     const scrollPromptY = useTransform(smoothProgress, [0.0, 0.80, 0.90], [0, 0, -50]);
