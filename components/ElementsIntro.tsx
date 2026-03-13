@@ -78,8 +78,8 @@ export const ElementsIntro: React.FC<ElementsIntroProps> = ({ setLogoHidden, pro
 
     const handleIconClick = (name: string) => {
         let screenIndex = 0;
-        if (name === 'Earth') screenIndex = 8.0; // Starts at 8.0
-        else if (name === 'Water') screenIndex = 9.0; // Starts at 9.0
+        if (name === 'Earth') screenIndex = 6.0;
+        else if (name === 'Water') screenIndex = 7.0;
         else screenIndex = 10.0; // Future starts at 10.0
 
         const vhVal = getAppViewportHeight();

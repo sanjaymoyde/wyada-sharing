@@ -64,6 +64,11 @@ const App: React.FC = () => {
   };
 
   const addToCart = (product: { id: string; variantId: number; name: string; price: number; color: string }) => {
+    if (!Number.isFinite(product.variantId) || product.variantId <= 0) {
+      console.warn(`Skipping addToCart for "${product.id}" because no valid Shopify variant is loaded yet.`);
+      return;
+    }
+
     setCartItems(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
