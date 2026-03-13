@@ -6,6 +6,16 @@ interface ManifestoProps {
     isNight: boolean;
 }
 
+const isAndroidDevice = (): boolean => {
+    if (typeof navigator === 'undefined') return false;
+    return /Android/i.test(navigator.userAgent || '');
+};
+
+const isTouchDevice = (): boolean => {
+    if (typeof navigator === 'undefined') return false;
+    return navigator.maxTouchPoints > 0;
+};
+
 const CONFIG = {
     screens: 5,
     scrollIndexMax: 5,
@@ -34,20 +44,26 @@ const GridCanvas: React.FC<{ isNight: boolean; progress: MotionValue<number> }> 
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
+        const androidTouch = isAndroidDevice() && isTouchDevice();
+        const touchDevice = isTouchDevice();
         let width = window.innerWidth;
         let height = window.innerHeight;
-        canvas.width = width;
-        canvas.height = height;
+        let dpr = 1;
+        let strokeGradient: CanvasGradient | string = 'rgba(255, 255, 255, 0.3)';
 
         const fov = 400;
         const viewDist = 100;
         const gridWidth = 6000;
         const gridDepth = 6000;
-        const cols = 50;
-        const rows = 50;
+        const cols = androidTouch ? 32 : touchDevice ? 40 : 50;
+        const rows = androidTouch ? 32 : touchDevice ? 40 : 50;
         const floorY = 350;
         const camY = 0;
         const spacingZ = gridDepth / rows;
+        const totalDepth = gridDepth + 200;
+        const maxDist = androidTouch ? 240 : 350;
+        const maxDistSq = maxDist * maxDist;
+        const frameInterval = androidTouch ? (1000 / 30) : 0;
 
         const points: Point3D[] = [];
         const forestMap: number[] = [];
@@ -85,6 +101,28 @@ const GridCanvas: React.FC<{ isNight: boolean; progress: MotionValue<number> }> 
             }
         };
 
+        const updateCanvasSize = () => {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            dpr = Math.min(window.devicePixelRatio || 1, androidTouch ? 1 : touchDevice ? 1.5 : 2);
+            canvas.width = Math.round(width * dpr);
+            canvas.height = Math.round(height * dpr);
+            canvas.style.width = `${width}px`;
+            canvas.style.height = `${height}px`;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+            const gradient = ctx.createLinearGradient(0, height, 0, height * 0.4);
+            const r = isNight ? 196 : 255;
+            const g = isNight ? 205 : 255;
+            const b = isNight ? 80 : 255;
+
+            gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.3)`);
+            gradient.addColorStop(0.33, `rgba(${r}, ${g}, ${b}, 0.3)`);
+            gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+            strokeGradient = gradient;
+            ctx.lineWidth = androidTouch ? 0.9 : 1;
+        };
+
         const handleMouseMove = (e: MouseEvent) => {
             const rect = canvas.getBoundingClientRect();
             mouse.x = e.clientX - rect.left;
@@ -102,46 +140,43 @@ const GridCanvas: React.FC<{ isNight: boolean; progress: MotionValue<number> }> 
         };
 
         window.addEventListener('mousemove', handleMouseMove);
-        window.addEventListener('deviceorientation', handleDeviceOrientation);
+        if (!androidTouch) {
+            window.addEventListener('deviceorientation', handleDeviceOrientation);
+        }
 
+        updateCanvasSize();
         initGrid();
 
         let animationFrameId: number;
-        const startTime = Date.now();
+        const startTime = performance.now();
+        let lastFrameTime = 0;
 
-        const animate = () => {
+        const render = (now: number) => {
+            animationFrameId = requestAnimationFrame(render);
+            if (frameInterval > 0 && now - lastFrameTime < frameInterval) return;
+            lastFrameTime = now;
+
             ctx.clearRect(0, 0, width, height);
-            const gradient = ctx.createLinearGradient(0, height, 0, height * 0.4);
-            const r = isNight ? 196 : 255;
-            const g = isNight ? 205 : 255;
-            const b = isNight ? 80 : 255;
-
-            gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.3)`);
-            gradient.addColorStop(0.33, `rgba(${r}, ${g}, ${b}, 0.3)`);
-            gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
-
-            ctx.strokeStyle = gradient;
-            ctx.lineWidth = 1;
+            ctx.strokeStyle = strokeGradient;
 
             const cx = width / 2;
             const cy = height / 2;
 
             const scrollZ = scrollRef.current * 5000;
 
-            const now = Date.now();
             const elapsed = now - startTime;
             const morphDelay = 500;
             const morphDuration = 2500;
             const rawMorph = Math.min(1, Math.max(0, (elapsed - morphDelay) / morphDuration));
             const morph = rawMorph * rawMorph * (3 - 2 * rawMorph);
 
+            ctx.beginPath();
             for (let i = 0; i < points.length; i++) {
                 const p = points[i];
                 const forestY = forestMap[i];
                 const cityY = cityMap[i];
 
                 let z = (p.originalZ + scrollZ);
-                const totalDepth = gridDepth + 200;
                 z = ((z % totalDepth) + totalDepth) % totalDepth;
                 z -= 200;
 
@@ -151,15 +186,15 @@ const GridCanvas: React.FC<{ isNight: boolean; progress: MotionValue<number> }> 
 
                 const dx = mouse.x - sx;
                 const dy = mouse.y - sy;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                const maxDist = 350;
+                const distSq = dx * dx + dy * dy;
 
                 const effectiveForestY = floorY + (forestY - floorY) * morph;
                 const effectiveCityY = floorY + (cityY - floorY) * morph;
 
                 let targetY = effectiveForestY;
 
-                if (dist < maxDist) {
+                if (distSq < maxDistSq) {
+                    const dist = Math.sqrt(distSq);
                     const t = 1 - (dist / maxDist);
                     const smoothT = t * t * (3 - 2 * t);
                     const intensity = 0.15;
@@ -171,8 +206,6 @@ const GridCanvas: React.FC<{ isNight: boolean; progress: MotionValue<number> }> 
 
                 const renderX = sx;
                 const renderY = (p.y + camY) * scale + cy;
-
-                ctx.beginPath();
 
                 if (i % (cols + 1) < cols) {
                     const nextP = points[i + 1];
@@ -201,18 +234,14 @@ const GridCanvas: React.FC<{ isNight: boolean; progress: MotionValue<number> }> 
                         ctx.lineTo(belowP.x * belowScale + cx, (belowP.y + camY) * belowScale + cy);
                     }
                 }
-                ctx.stroke();
             }
-            animationFrameId = requestAnimationFrame(animate);
+            ctx.stroke();
         };
 
-        animate();
+        animationFrameId = requestAnimationFrame(render);
 
         const handleResize = () => {
-            width = window.innerWidth;
-            height = window.innerHeight;
-            canvas.width = width;
-            canvas.height = height;
+            updateCanvasSize();
             initGrid();
         };
         window.addEventListener('resize', handleResize);
@@ -220,7 +249,9 @@ const GridCanvas: React.FC<{ isNight: boolean; progress: MotionValue<number> }> 
         return () => {
             window.removeEventListener('resize', handleResize);
             window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('deviceorientation', handleDeviceOrientation);
+            if (!androidTouch) {
+                window.removeEventListener('deviceorientation', handleDeviceOrientation);
+            }
             cancelAnimationFrame(animationFrameId);
         };
     }, [isNight]);
@@ -322,7 +353,8 @@ const Hero: React.FC<{
     isNight: boolean;
     opacity: MotionValue<number>;
     y: MotionValue<number>;
-}> = ({ isNight, opacity, y }) => {
+    reduceEffects?: boolean;
+}> = ({ isNight, opacity, y, reduceEffects = false }) => {
     const text1 = 'Cities are evolving.';
     const text2 = 'Your body... not so much.';
     const words1 = text1.split(' ');
@@ -340,11 +372,11 @@ const Hero: React.FC<{
     };
 
     const item: Variants = {
-        hidden: { opacity: 0, y: 30, filter: 'blur(8px)' },
+        hidden: { opacity: 0, y: 30, filter: reduceEffects ? 'none' : 'blur(8px)' },
         show: {
             opacity: 1,
             y: 0,
-            filter: 'blur(0px)',
+            filter: reduceEffects ? 'none' : 'blur(0px)',
             transition: {
                 type: 'spring',
                 stiffness: 150,
@@ -409,6 +441,7 @@ const Outro: React.FC<{ opacity: MotionValue<number>; y: MotionValue<number> }> 
 
 export const Manifesto: React.FC<ManifestoProps> = ({ isNight }) => {
     const containerRef = useRef<HTMLDivElement>(null);
+    const androidTouch = useMemo(() => isAndroidDevice() && isTouchDevice(), []);
 
     const { scrollYProgress } = useScroll({
         target: containerRef,
@@ -435,22 +468,51 @@ export const Manifesto: React.FC<ManifestoProps> = ({ isNight }) => {
         let isNavigating = false;
         let lastWheelTime = 0;
         let scrollAccumulator = 0;
+        let resetNavigationTimeout: number | null = null;
+        let scrollAnimation: { stop: () => void } | null = null;
+
+        const clearResetNavigationTimeout = () => {
+            if (resetNavigationTimeout !== null) {
+                window.clearTimeout(resetNavigationTimeout);
+                resetNavigationTimeout = null;
+            }
+        };
+
+        const resetNavigationState = () => {
+            clearResetNavigationTimeout();
+            document.documentElement.style.overflow = '';
+            isNavigating = false;
+            scrollAccumulator = 0;
+            scrollAnimation = null;
+        };
 
         const scrollToFast = (targetY: number, customDuration: number = 0.5) => {
-            // Instantly kill native scroll momentum on mobile so there's no stutter/delay
+            const startY = window.scrollY;
+            if (Math.abs(targetY - startY) < 2) {
+                resetNavigationState();
+                return;
+            }
+
+            scrollAnimation?.stop();
+            clearResetNavigationTimeout();
+
+            if (androidTouch) {
+                window.scrollTo({ top: Math.round(targetY), behavior: 'smooth' });
+                resetNavigationTimeout = window.setTimeout(
+                    resetNavigationState,
+                    Math.max(280, Math.round(customDuration * 1000) + 180)
+                );
+                return;
+            }
+
+            // Instantly kill native scroll momentum on iOS so there's no stutter/delay.
             document.documentElement.style.overflow = 'hidden';
 
-            const startY = window.scrollY;
-
-            animate(startY, targetY, {
+            scrollAnimation = animate(startY, targetY, {
                 duration: customDuration,
                 ease: [0.33, 1, 0.68, 1], // snappy easing
                 onUpdate: (latest) => window.scrollTo(0, latest),
-                onComplete: () => {
-                    document.documentElement.style.overflow = '';
-                    isNavigating = false;
-                    scrollAccumulator = 0;
-                }
+                onComplete: resetNavigationState
             });
         };
 
@@ -546,14 +608,17 @@ export const Manifesto: React.FC<ManifestoProps> = ({ isNight }) => {
         const wheelOptions = { passive: false } as const;
         window.addEventListener('wheel', handleWheel, wheelOptions);
         window.addEventListener('touchstart', handleTouchStart, { passive: true });
-        window.addEventListener('touchend', handleTouchEnd, { passive: true });
+        window.addEventListener('touchend', handleTouchEnd, { passive: false });
 
         return () => {
+            scrollAnimation?.stop();
+            clearResetNavigationTimeout();
+            document.documentElement.style.overflow = '';
             window.removeEventListener('wheel', handleWheel);
             window.removeEventListener('touchstart', handleTouchStart);
             window.removeEventListener('touchend', handleTouchEnd);
         };
-    }, []);
+    }, [androidTouch]);
 
     return (
         <section
@@ -572,7 +637,7 @@ export const Manifesto: React.FC<ManifestoProps> = ({ isNight }) => {
                 <div className="w-full relative h-[var(--app-vh)] supports-[height:100svh]:!h-[100svh]">
                     <GridCanvas isNight={isNight} progress={smoothProgress} />
 
-                    <Hero isNight={isNight} opacity={heroOpacity} y={heroY} />
+                    <Hero isNight={isNight} opacity={heroOpacity} y={heroY} reduceEffects={androidTouch} />
 
                     <ScrollText text="Pollution your nose can't smell." progress={smoothProgress} range={CONFIG.lineRanges.pollution} />
                     <ScrollText text="Blue light that steals your sleep." progress={smoothProgress} range={CONFIG.lineRanges.blueLight} />
