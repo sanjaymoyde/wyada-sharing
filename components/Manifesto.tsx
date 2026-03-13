@@ -328,9 +328,9 @@ const ScrollText: React.FC<{
     const letterActiveDuration = duration * 0.7;
 
     return (
-        <motion.div className="absolute inset-0 flex items-center justify-start pointer-events-none px-6 md:px-12 lg:px-24" style={{ y: containerY }}>
-            <div className={`max-w-3xl text-left ${wrapperClassName || ''}`}>
-                <h2 className={`font-bold tracking-tight text-white leading-tight ${textClassName || 'text-2xl md:text-3xl lg:text-4xl'}`}>
+        <motion.div className="absolute inset-0 flex items-center justify-start pointer-events-none px-4 sm:px-6 md:px-12 lg:px-24" style={{ y: containerY }}>
+            <div className={`w-full max-w-3xl text-left ${wrapperClassName || ''}`}>
+                <h2 className={`whitespace-nowrap font-bold tracking-tight text-white leading-none text-[clamp(1.15rem,5.35vw,2rem)] md:text-3xl md:leading-tight lg:text-4xl ${textClassName || ''}`}>
                     {chars.map((char, index) => {
                         const stagger = staggerMax * (index / totalChars);
                         return (
