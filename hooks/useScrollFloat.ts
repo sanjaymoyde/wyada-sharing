@@ -30,29 +30,19 @@ export const useScrollFloat = (options: ScrollFloatOptions) => {
         const element = ref.current;
         if (!element) return;
 
-        let rafId: number;
+        let rafId: number | null = null;
+        let isVisible = false;
 
         const update = () => {
-            // Get current progress value from MotionValue
+            if (!isVisible) return;
+
             const currentScroll = scrollY.get();
-
-            // Calculate delta from base (when the item "starts")
             const delta = currentScroll - baseValue;
-
-            // Calculate target offset in pixels.
-            // We assume 1 unit of scrollIndex roughly equals 1 viewport height in this context?
-            // Actually, let's just use pixels based on viewport height scaling to keep it meaningful.
             const vh = window.innerHeight;
-
-            // Move UP as index increases -> negative offset
-            // relative to the "start" point.
-            // If delta is 0 (at start), offset is 0.
-            // If delta is 1 (scrolled 1 screen past start), offset is -1 * speed * vh.
             const targetOffset = -delta * vh * speed;
 
             state.current.targetY = targetOffset;
 
-            // Lerp
             const diff = state.current.targetY - state.current.currentY;
             if (Math.abs(diff) > 0.05) {
                 state.current.currentY += diff * lerp;
@@ -60,26 +50,31 @@ export const useScrollFloat = (options: ScrollFloatOptions) => {
                 state.current.currentY = state.current.targetY;
             }
 
-            // Apply transform
             element.style.transform = `translate3d(0, ${state.current.currentY}px, 0)`;
-
-            // Opacity logic (Optional)
-            if (enableOpacity) {
-                // Simple fade out if it floats too high
-                // Let's say if it moves more than 30% of screen height from base?
-                // ... leaving disabled by default as requested unless user specifically asks for fade fix.
-            }
 
             rafId = requestAnimationFrame(update);
         };
 
-        rafId = requestAnimationFrame(update);
+        const observer = new IntersectionObserver(([entry]) => {
+            isVisible = entry.isIntersecting;
+            if (isVisible) {
+                // Start the loop when element comes into view
+                rafId = requestAnimationFrame(update);
+            } else {
+                // Stop the loop when element leaves the viewport
+                if (rafId !== null) {
+                    cancelAnimationFrame(rafId);
+                    rafId = null;
+                }
+            }
+        });
+
+        observer.observe(element);
 
         return () => {
-            cancelAnimationFrame(rafId);
-            if (element) {
-                element.style.transform = '';
-            }
+            observer.disconnect();
+            if (rafId !== null) cancelAnimationFrame(rafId);
+            element.style.transform = '';
         };
     }, [scrollY, baseValue, speed, lerp, enableOpacity]);
 

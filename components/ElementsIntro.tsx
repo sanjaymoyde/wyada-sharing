@@ -10,6 +10,11 @@ interface ElementsIntroProps {
     products?: any[];
 }
 
+const isAndroidTouchDevice = (): boolean => {
+    if (typeof navigator === 'undefined') return false;
+    return /Android/i.test(navigator.userAgent || '') && navigator.maxTouchPoints > 0;
+};
+
 export const ElementsIntro: React.FC<ElementsIntroProps> = ({ setLogoHidden, products = [] }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const { scrollY } = useScroll();
@@ -18,6 +23,7 @@ export const ElementsIntro: React.FC<ElementsIntroProps> = ({ setLogoHidden, pro
     const lastHiddenState = useRef<boolean | null>(null);
     const [isProxyActive, setProxyActive] = useState(false);
     const [activeDescription, setActiveDescription] = useState<string>("");
+    const [androidTouch] = useState(isAndroidTouchDevice);
 
     const defaultDesc = "Start where your body meets the world. A <span class=\"font-extrabold\">personal care</span> system inspired by the 5 fundamental forces of nature.";
 
@@ -116,10 +122,13 @@ export const ElementsIntro: React.FC<ElementsIntroProps> = ({ setLogoHidden, pro
             ref={containerRef}
             // ensures this stays pinned at top while next section (Earth) slides in
             // -mt-[1px] fixes the green line gap issue by overlapping slightly
-            className="relative w-full z-[30] -mt-[1px]"
+            className={`relative w-full z-[30] -mt-[1px] ${androidTouch ? 'snap-start snap-always' : ''}`}
             style={{ height: 'calc(var(--app-vh) * 2)' }}
         >
-            <div className="sticky top-0 w-full bg-[#bca2d1] overflow-hidden snap-start snap-always" style={{ height: 'var(--app-vh)' }}>
+            <div
+                className={`sticky top-0 w-full bg-[#bca2d1] overflow-hidden ${androidTouch ? 'snap-none' : 'snap-start snap-always'}`}
+                style={{ height: 'var(--app-vh)' }}
+            >
                 <div className="w-full relative flex flex-col items-center justify-start supports-[height:100svh]:!h-[100svh]" style={{ height: 'var(--app-vh)' }}>
 
                     {createPortal(

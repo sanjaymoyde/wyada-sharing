@@ -16,7 +16,8 @@ interface FloatingBarProps extends ThemeProps {
     onRemoveItem: (id: string) => void;
     addToCart: (product: { id: string; variantId: number; name: string; price: number; color: string }) => void;
     onViewProduct: (type: 'mesa' | 'crest') => void;
-    earthProduct?: any; // strict type comes from import but any is easier for now to avoid circular deps if types not exported perfectly
+    updateCartQuantity: (id: string, quantity: number) => void;
+    earthProduct?: any;
     waterProduct?: any;
     isVisible?: boolean;
 }
@@ -39,12 +40,6 @@ export const FloatingBar: React.FC<FloatingBarProps> = ({
     isVisible = true
 }) => {
     const mesaPrice = earthProduct?.variants?.[0]?.price ? Number(earthProduct.variants[0].price) : 799;
-    // ... (omitting lines 40-479 for brevity in replacement, but wait, replace_file_content replaces the whole block if I specify it. I should target specific blocks or use multi_replace if I can't capture everything. I will target the end block mainly)
-
-    // Actually, I can just replace the interface and destructured props, and then a separate replacement for the return statement part.
-    // But wait, the tool says "single contiguous block". I can't do two separate edits in one call if they are far apart.
-    // I will use multi_replace_file_content tool for this since edits are in two places (props interface/destructuring AND the render returned JSX).
-
     const crestPrice = waterProduct?.variants?.[0]?.price ? Number(waterProduct.variants[0].price) : 1299;
     const pairPrice = (mesaPrice + crestPrice) - 299; // Keeping similar discount ratio
     const pairOriginalPrice = mesaPrice + crestPrice;

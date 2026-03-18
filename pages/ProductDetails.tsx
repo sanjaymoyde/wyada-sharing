@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ProductPage } from '../components/ProductPage';
 import { Product } from '../types';
@@ -31,14 +31,14 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({
         return null;
     }, [productType, earthProduct, waterProduct]);
 
-    if (!productType) {
-        // Handle invalid product, maybe redirect or show 404
-        return <div>Product not found</div>;
-    }
-
-    React.useEffect(() => {
+    // Must be before any early return to follow the rules of hooks
+    useEffect(() => {
         window.scrollTo(0, 0);
     }, []);
+
+    if (!productType) {
+        return <div>Product not found</div>;
+    }
 
     const handleBackToHome = () => {
         navigate('/');

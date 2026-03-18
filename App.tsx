@@ -8,7 +8,7 @@ import { MobileDebugOverlay } from './components/MobileDebugOverlay';
 
 const App: React.FC = () => {
   const [isNight, setIsNight] = useState<boolean>(false);
-  const [showToast, setShowToast] = useState<boolean>(false); // Lifted state for Toast
+  const [showToast, setShowToast] = useState<boolean>(false);
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
     try {
       const saved = localStorage.getItem('cartItems');
@@ -22,6 +22,7 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('cartItems', JSON.stringify(cartItems));
   }, [cartItems]);
+
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [earthProduct, setEarthProduct] = useState<Product | null>(null);
@@ -40,10 +41,8 @@ const App: React.FC = () => {
       try {
         const products = await fetchProducts();
         setAllProducts(products);
-
         const earth = products.find(p => p.handle === 'mesa-re-balance-cleansing-clay');
         const water = products.find(p => p.handle === 'crest-all-defence-skin-sorbet');
-
         if (earth) setEarthProduct(earth);
         if (water) setWaterProduct(water);
       } catch (error) {
@@ -56,9 +55,7 @@ const App: React.FC = () => {
   const toggleTheme = () => {
     setIsNight((prev) => {
       const newState = !prev;
-      if (newState) {
-        setShowToast(true);
-      }
+      if (newState) setShowToast(true);
       return newState;
     });
   };
@@ -68,7 +65,6 @@ const App: React.FC = () => {
       console.warn(`Skipping addToCart for "${product.id}" because no valid Shopify variant is loaded yet.`);
       return;
     }
-
     setCartItems(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
@@ -84,231 +80,42 @@ const App: React.FC = () => {
   };
 
   const updateCartQuantity = (id: string, quantity: number) => {
-    setCartItems(prev => prev.map(item => {
-      if (item.id === id) {
-        return { ...item, quantity: Math.max(1, quantity) };
-      }
-      return item;
-    }));
+    setCartItems(prev => prev.map(item =>
+      item.id === id ? { ...item, quantity: Math.max(1, quantity) } : item
+    ));
+  };
+
+  // Shared props passed to every Home route
+  const homeProps = {
+    isNight,
+    toggleTheme,
+    cartItems,
+    addToCart,
+    removeFromCart,
+    updateCartQuantity,
+    isCartOpen,
+    setIsCartOpen,
+    isMenuOpen,
+    setIsMenuOpen,
+    earthProduct,
+    waterProduct,
+    allProducts,
+    showToast,
+    setShowToast,
   };
 
   return (
     <BrowserRouter>
       <Routes>
-        {/* Base Route */}
-        <Route
-          path="/"
-          element={
-            <Home
-              isNight={isNight}
-              toggleTheme={toggleTheme}
-              cartItems={cartItems}
-              addToCart={addToCart}
-              removeFromCart={removeFromCart}
-              updateCartQuantity={updateCartQuantity}
-              isCartOpen={isCartOpen}
-              setIsCartOpen={setIsCartOpen}
-              isMenuOpen={isMenuOpen}
-              setIsMenuOpen={setIsMenuOpen}
-              earthProduct={earthProduct}
-              waterProduct={waterProduct}
-              allProducts={allProducts}
-              showToast={showToast}
-              setShowToast={setShowToast}
-              initialSection="origin"
-            />
-          }
-        />
-
-        {/* Menu Route */}
-        <Route
-          path="/menu"
-          element={
-            <Home
-              isNight={isNight}
-              toggleTheme={toggleTheme}
-              cartItems={cartItems}
-              addToCart={addToCart}
-              removeFromCart={removeFromCart}
-              updateCartQuantity={updateCartQuantity}
-              isCartOpen={isCartOpen}
-              setIsCartOpen={setIsCartOpen}
-              isMenuOpen={isMenuOpen}
-              setIsMenuOpen={setIsMenuOpen}
-              earthProduct={earthProduct}
-              waterProduct={waterProduct}
-              allProducts={allProducts}
-              showToast={showToast}
-              setShowToast={setShowToast}
-              initialMenuOpen={true}
-            />
-          }
-        />
-
-        {/* Cart Route */}
-        <Route
-          path="/cart"
-          element={
-            <Home
-              isNight={isNight}
-              toggleTheme={toggleTheme}
-              cartItems={cartItems}
-              addToCart={addToCart}
-              removeFromCart={removeFromCart}
-              updateCartQuantity={updateCartQuantity}
-              isCartOpen={isCartOpen}
-              setIsCartOpen={setIsCartOpen}
-              isMenuOpen={isMenuOpen}
-              setIsMenuOpen={setIsMenuOpen}
-              earthProduct={earthProduct}
-              waterProduct={waterProduct}
-              allProducts={allProducts}
-              showToast={showToast}
-              setShowToast={setShowToast}
-              initialCartOpen={true}
-            />
-          }
-        />
-
-        {/* Deep Link Routes */}
-        <Route
-          path="/element-intro"
-          element={
-            <Home
-              isNight={isNight}
-              toggleTheme={toggleTheme}
-              cartItems={cartItems}
-              addToCart={addToCart}
-              removeFromCart={removeFromCart}
-              updateCartQuantity={updateCartQuantity}
-              isCartOpen={isCartOpen}
-              setIsCartOpen={setIsCartOpen}
-              isMenuOpen={isMenuOpen}
-              setIsMenuOpen={setIsMenuOpen}
-              earthProduct={earthProduct}
-              waterProduct={waterProduct}
-              allProducts={allProducts}
-              showToast={showToast}
-              setShowToast={setShowToast}
-              initialSection="elements"
-            />
-          }
-        />
-        <Route
-          path="/mesa"
-          element={
-            <Home
-              isNight={isNight}
-              toggleTheme={toggleTheme}
-              cartItems={cartItems}
-              addToCart={addToCart}
-              removeFromCart={removeFromCart}
-              updateCartQuantity={updateCartQuantity}
-              isCartOpen={isCartOpen}
-              setIsCartOpen={setIsCartOpen}
-              isMenuOpen={isMenuOpen}
-              setIsMenuOpen={setIsMenuOpen}
-              earthProduct={earthProduct}
-              waterProduct={waterProduct}
-              allProducts={allProducts}
-              showToast={showToast}
-              setShowToast={setShowToast}
-              initialSection="earth"
-            />
-          }
-        />
-        <Route
-          path="/crest"
-          element={
-            <Home
-              isNight={isNight}
-              toggleTheme={toggleTheme}
-              cartItems={cartItems}
-              addToCart={addToCart}
-              removeFromCart={removeFromCart}
-              updateCartQuantity={updateCartQuantity}
-              isCartOpen={isCartOpen}
-              setIsCartOpen={setIsCartOpen}
-              isMenuOpen={isMenuOpen}
-              setIsMenuOpen={setIsMenuOpen}
-              earthProduct={earthProduct}
-              waterProduct={waterProduct}
-              allProducts={allProducts}
-              showToast={showToast}
-              setShowToast={setShowToast}
-              initialSection="water"
-            />
-          }
-        />
-        <Route
-          path="/upcoming"
-          element={
-            <Home
-              isNight={isNight}
-              toggleTheme={toggleTheme}
-              cartItems={cartItems}
-              addToCart={addToCart}
-              removeFromCart={removeFromCart}
-              updateCartQuantity={updateCartQuantity}
-              isCartOpen={isCartOpen}
-              setIsCartOpen={setIsCartOpen}
-              isMenuOpen={isMenuOpen}
-              setIsMenuOpen={setIsMenuOpen}
-              earthProduct={earthProduct}
-              waterProduct={waterProduct}
-              allProducts={allProducts}
-              showToast={showToast}
-              setShowToast={setShowToast}
-              initialSection="future"
-            />
-          }
-        />
-        <Route
-          path="/community"
-          element={
-            <Home
-              isNight={isNight}
-              toggleTheme={toggleTheme}
-              cartItems={cartItems}
-              addToCart={addToCart}
-              removeFromCart={removeFromCart}
-              updateCartQuantity={updateCartQuantity}
-              isCartOpen={isCartOpen}
-              setIsCartOpen={setIsCartOpen}
-              isMenuOpen={isMenuOpen}
-              setIsMenuOpen={setIsMenuOpen}
-              earthProduct={earthProduct}
-              waterProduct={waterProduct}
-              allProducts={allProducts}
-              showToast={showToast}
-              setShowToast={setShowToast}
-              initialSection="circle"
-            />
-          }
-        />
-        <Route
-          path="/bigpicture"
-          element={
-            <Home
-              isNight={isNight}
-              toggleTheme={toggleTheme}
-              cartItems={cartItems}
-              addToCart={addToCart}
-              removeFromCart={removeFromCart}
-              updateCartQuantity={updateCartQuantity}
-              isCartOpen={isCartOpen}
-              setIsCartOpen={setIsCartOpen}
-              isMenuOpen={isMenuOpen}
-              setIsMenuOpen={setIsMenuOpen}
-              earthProduct={earthProduct}
-              waterProduct={waterProduct}
-              allProducts={allProducts}
-              showToast={showToast}
-              setShowToast={setShowToast}
-              initialSection="bigpicture"
-            />
-          }
-        />
+        <Route path="/" element={<Home {...homeProps} initialSection="origin" />} />
+        <Route path="/menu" element={<Home {...homeProps} initialMenuOpen={true} />} />
+        <Route path="/cart" element={<Home {...homeProps} initialCartOpen={true} />} />
+        <Route path="/element-intro" element={<Home {...homeProps} initialSection="elements" />} />
+        <Route path="/mesa" element={<Home {...homeProps} initialSection="earth" />} />
+        <Route path="/crest" element={<Home {...homeProps} initialSection="water" />} />
+        <Route path="/upcoming" element={<Home {...homeProps} initialSection="future" />} />
+        <Route path="/community" element={<Home {...homeProps} initialSection="circle" />} />
+        <Route path="/bigpicture" element={<Home {...homeProps} initialSection="bigpicture" />} />
         <Route
           path="/product/:handle"
           element={
